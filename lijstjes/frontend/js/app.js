@@ -145,8 +145,11 @@ function renderPushBanner() {
   const banner = el(`
     <div class="card">
       <div style="margin-bottom:10px;">
-        🔔 Zet meldingen aan om te zien wanneer een lijstje vanuit Home
-        Assistant wordt gewijzigd — ook als je de app niet open hebt staan.
+        🔔 Zet meldingen aan om lijstjes ook op de achtergrond bij te werken:
+        zonder dit staat je offline-kopie pas ververst zodra je de app zelf
+        weer opent. Mét meldingen aan verwerkt de app wijzigingen vanuit Home
+        Assistant meteen, ook zonder de app open te hebben — handig als je
+        straks zonder bereik in de winkel staat.
       </div>
       <button class="secondary" id="enable-push-btn">Meldingen aanzetten</button>
     </div>

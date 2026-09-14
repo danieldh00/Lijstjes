@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+- Echte achtergrondverversing: tot nu toe kon de offline-kopie alleen
+  bijwerken terwijl de app open was (via polling of het heropenen ervan).
+  Voortaan ververst de service worker de offline-kopie ook wanneer de app
+  helemaal niet open staat, door dat mee te liften op de pushmelding die de
+  add-on al stuurt zodra 'ie een wijziging in Home Assistant detecteert --
+  het enige moment waarop een webapp code mag draaien zonder open te zijn.
+  Vereist dat meldingen aanstaan (zie "Pushmeldingen" in DOCS.md); de knop
+  daarvoor legt dit nu ook uit.
+
 ## 0.2.2
 
 - Layoutfix: de app-inhoud en de statusbalk hielden geen rekening met de

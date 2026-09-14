@@ -60,7 +60,27 @@ function scheduleFlush(delay = 400) {
   scheduleFlush._t = setTimeout(flush, delay);
 }
 
-function init() {
+async function init() {
+  // Voordat we ook maar iets over het netwerk proberen: is er een snapshot
+  // die de service worker op de achtergrond heeft opgehaald (via een
+  // pushmelding terwijl de app niet open stond)? Zo ja, die is mogelijk
+  // verser dan wat er nu lokaal staat -- meteen tonen, ook zonder netwerk.
+  if (await storage.adoptBackgroundSnapshot()) {
+    notify();
+  }
+
+  // Komt er terwijl de app open staat alsnog zo'n achtergrondverversing
+  // binnen (bv. een pushmelding op een ander toestel, of de app staat op de
+  // achtergrondtab), neem 'm dan meteen over in plaats van te wachten op de
+  // volgende poll.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', async (event) => {
+      if (event.data?.type === 'snapshot-updated' && (await storage.adoptBackgroundSnapshot())) {
+        notify();
+      }
+    });
+  }
+
   window.addEventListener('online', () => {
     setStatus({ state: 'idle' });
     flush();

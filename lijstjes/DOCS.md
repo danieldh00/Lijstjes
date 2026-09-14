@@ -43,6 +43,17 @@ supermarkt zonder bereik: je boodschappenlijst blijft gewoon bruikbaar.
 moet de inhoud ergens vandaan halen); daarna werkt dat toestel altijd
 offline totdat er weer verbinding is om te synchroniseren.
 
+**Verversen terwijl de app niet open staat.** Een webapp kan normaal alleen
+data ophalen terwijl 'ie open is. Met **meldingen aangezet** (zie hieronder)
+gebeurt dat ook zonder: elke keer dat de add-on op de achtergrond een
+wijziging in Home Assistant detecteert en een pushmelding stuurt, ververst
+de service worker op je toestel tegelijk ook stilletjes de offline-kopie —
+nog vóórdat je de melding aantikt of de app opent. Kom je later zonder
+bereik in de winkel en open je de app, dan staat de nieuwste stand er dus al
+in, ook al heb je de app zelf niet geopend sinds de wijziging. Zonder
+meldingen aan blijft de offline-kopie op de stand van de laatste keer dat je
+de app zelf open had staan.
+
 ## Pushmeldingen bij wijzigingen vanuit Home Assistant
 
 Een wijziging die rechtstreeks in Home Assistant wordt gemaakt — via het
@@ -53,6 +64,13 @@ de add-on draait) of er iets gewijzigd is en stuurt dan een melding met de
 lijstnaam en wat er veranderd is; een tik op de melding opent de app direct
 op dat lijstje. Het toestel waarop de wijziging zelf gemaakt is, krijgt daar
 geen dubbele melding over.
+
+Dit is meteen ook de enige manier waarop een webapp data mag ophalen
+terwijl hij niet open staat: elke pushmelding is voor de service worker op
+je toestel de kans om de offline-kopie op de achtergrond te verversen (zie
+"Verversen terwijl de app niet open staat" hierboven). Meldingen aanzetten
+is dus niet alleen handig, maar de manier waarop de app up-to-date blijft
+zonder dat je 'm zelf hoeft te openen.
 
 Zet dit aan via de knop **"Meldingen aanzetten"** boven aan het
 lijstjes-overzicht (alleen zichtbaar op de directe poort-3100-route, niet in

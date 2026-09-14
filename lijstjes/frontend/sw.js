@@ -1,7 +1,13 @@
 // App-shell caching: maakt de app (niet de data) volledig offline
-// beschikbaar. /api/* wordt bewust nooit gecachet -- de app-eigen
-// localStorage-laag (js/storage.js) regelt offline data en synchronisatie.
+// beschikbaar. /api/* wordt bewust nooit gecachet in de fetch-handler --
+// de app-eigen localStorage-laag (js/storage.js) regelt offline data en
+// synchronisatie. Voor echte achtergrondverversing (zie hieronder bij
+// "push") gebruiken we een apart datacache: een service worker heeft geen
+// toegang tot localStorage (dat bestaat alleen in een paginacontext), de
+// Cache API is wel vanuit beide bereikbaar.
 const CACHE_NAME = 'lijstjes-shell-v1';
+const DATA_CACHE_NAME = 'lijstjes-data-v1';
+const SNAPSHOT_REQUEST = new Request('/__offline-snapshot__');
 const SHELL_FILES = [
   './',
   './index.html',
@@ -29,10 +35,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  const keep = new Set([CACHE_NAME, DATA_CACHE_NAME]);
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -54,8 +61,34 @@ self.addEventListener('push', (event) => {
     badge: 'icons/icon-192.png',
     data: { entityId: data.entityId },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Elke pushmelding is ook het enige moment waarop deze service worker mag
+  // draaien terwijl de app zelf niet open staat -- dus dit is meteen de kans
+  // om de offline-snapshot te verversen, zodat de app bij het volgende
+  // openen (ook zonder netwerk, bv. in een winkel zonder bereik) meteen de
+  // actuele lijst toont in plaats van de staat van de laatste keer dat de
+  // app open stond.
+  event.waitUntil(Promise.all([self.registration.showNotification(title, options), refreshOfflineSnapshot()]));
 });
+
+async function refreshOfflineSnapshot() {
+  try {
+    const res = await fetch('/api/content', { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const cache = await caches.open(DATA_CACHE_NAME);
+    await cache.put(SNAPSHOT_REQUEST, res.clone());
+
+    // Staat de app toch al open (bv. op de achtergrondtab van een ander
+    // toestel), laat 'm dat dan meteen weten in plaats van te wachten op de
+    // volgende poll.
+    const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windowClients) {
+      client.postMessage({ type: 'snapshot-updated' });
+    }
+  } catch (err) {
+    // Geen netwerk of Home Assistant niet bereikbaar op dit moment -- geen
+    // probleem, de eerstvolgende pushmelding probeert het opnieuw.
+  }
+}
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

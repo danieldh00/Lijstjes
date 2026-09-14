@@ -6,6 +6,12 @@
 const SNAPSHOT_KEY = 'lijstjes:snapshot';
 const OUTBOX_KEY = 'lijstjes:outbox';
 
+// Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
+// pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
+// niet bereikbaar vanuit een service worker, de Cache API wel vanuit beide.
+const BG_CACHE_NAME = 'lijstjes-data-v1';
+const BG_SNAPSHOT_REQUEST = '/__offline-snapshot__';
+
 function uuid() {
   if (window.crypto?.randomUUID) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -221,6 +227,28 @@ function replaceSnapshot(serverSnapshot) {
   persist();
 }
 
+// Neemt de snapshot over die de service worker op de achtergrond heeft
+// opgehaald (zie sw.js' push-handler) -- het enige moment waarop de app
+// verse data kan hebben zonder zelf open geweest te zijn. Alleen overnemen
+// als 'ie nieuwer is en er geen eigen, nog te verzenden wijzigingen zijn
+// die daardoor overschreven zouden worden.
+async function adoptBackgroundSnapshot() {
+  if (!('caches' in window)) return false;
+  try {
+    const cache = await caches.open(BG_CACHE_NAME);
+    const res = await cache.match(BG_SNAPSHOT_REQUEST);
+    if (!res) return false;
+    const snapshot = await res.json();
+    if (state.outbox.length > 0) return false;
+    if (state.snapshot.syncedAt && new Date(snapshot.syncedAt) <= new Date(state.snapshot.syncedAt)) return false;
+    state.snapshot = snapshot;
+    persist();
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 export {
   getSnapshot,
   getOutboxSize,
@@ -233,6 +261,7 @@ export {
   moveItemLocal,
   applySyncResult,
   replaceSnapshot,
+  adoptBackgroundSnapshot,
   findList,
   findItem,
 };
