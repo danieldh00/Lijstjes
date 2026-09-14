@@ -98,6 +98,18 @@ async function refreshListSettings() {
   }
 }
 
+// Volgorde van lijstjes -- zelfde behandeling: los ophalen en cachen, geen
+// Home Assistant-data.
+async function refreshListOrder() {
+  try {
+    const { order } = await api.listOrder();
+    storage.setListOrderCache(order);
+    notify();
+  } catch (err) {
+    // stil falen -- geen netwerk
+  }
+}
+
 async function init() {
   // Voordat we ook maar iets over het netwerk proberen: is er een snapshot
   // die de service worker op de achtergrond heeft opgehaald (via een
@@ -143,6 +155,7 @@ async function init() {
   refreshTemplates();
   refreshStores();
   refreshListSettings();
+  refreshListOrder();
 }
 
 function mutateAndSync(mutateFn) {
@@ -152,4 +165,14 @@ function mutateAndSync(mutateFn) {
   return result;
 }
 
-export { init, onChange, onStatus, flush, mutateAndSync, refreshTemplates, refreshStores, refreshListSettings };
+export {
+  init,
+  onChange,
+  onStatus,
+  flush,
+  mutateAndSync,
+  refreshTemplates,
+  refreshStores,
+  refreshListSettings,
+  refreshListOrder,
+};

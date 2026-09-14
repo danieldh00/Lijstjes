@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0
+
+- Lijstjes verwijderen en herordenen vanaf het overzicht: elke lijst-rij
+  heeft nu een ✕ (verwijderen, met bevestiging — verwijdert ook echt de
+  onderliggende `local_todo`-integratie en alle items erin uit Home
+  Assistant) en ↑/↓ (herordenen, puur een weergavevoorkeur van de app,
+  bewaard op de add-on zodat de volgorde hetzelfde is op al je gekoppelde
+  toestellen).
+
 ## 0.6.0
 
 - Sjablonen en Winkels staan nu per lijstje aan of uit (⚙-icoontje boven

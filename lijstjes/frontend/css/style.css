@@ -80,7 +80,17 @@ h2 { font-size: 18px; margin: 0 0 12px; }
   margin-bottom: 10px;
 }
 
+.list-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.list-card-row.pending { opacity: 0.6; }
+
 .list-card {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -89,8 +99,9 @@ h2 { font-size: 18px; margin: 0 0 12px; }
 }
 
 .list-card .name { font-size: 16px; font-weight: 600; }
-.list-card .count { color: var(--muted); font-size: 14px; }
-.list-card.pending { opacity: 0.6; }
+.list-card .count { color: var(--muted); font-size: 14px; margin-left: 10px; }
+
+.list-card-actions { display: flex; gap: 2px; flex: none; }
 
 .item-row {
   display: flex;

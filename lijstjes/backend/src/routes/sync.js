@@ -1,6 +1,6 @@
 const express = require('express');
 const { addItem, updateItem, removeItem, moveItem, getItems } = require('../ha/todo');
-const { createTodoList } = require('../ha/lists');
+const { createTodoList, deleteTodoList } = require('../ha/lists');
 const { buildSnapshot } = require('../ha/snapshot');
 const { markActor } = require('../recentActors');
 
@@ -34,6 +34,10 @@ async function applyMutation(mutation, resolvedUids) {
     case 'create_list': {
       const list = await createTodoList(mutation.name);
       return { entity_id: list.entity_id, name: list.name, pending: !!list.pending };
+    }
+    case 'delete_list': {
+      await deleteTodoList(mutation.entity_id);
+      return { entity_id: mutation.entity_id };
     }
     case 'add_item': {
       await addItem(mutation.entity_id, {

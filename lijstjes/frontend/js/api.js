@@ -30,6 +30,8 @@ const api = {
   deleteStore: (id) => request(`/api/stores/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   listSettings: () => request('/api/list-settings'),
   setListSettings: (data) => request('/api/list-settings', { method: 'POST', body: data }),
+  listOrder: () => request('/api/list-order'),
+  setListOrder: (order) => request('/api/list-order', { method: 'POST', body: { order } }),
 };
 
 export default api;

@@ -15,7 +15,9 @@ apart account-systeem.
   verschijnen automatisch; nieuwe lijstjes die je in de app aanmaakt, worden
   ook automatisch als nieuwe `local_todo`-integratie in Home Assistant
   aangemaakt (en andersom: een lijst die je in HA toevoegt, verschijnt in de
-  app).
+  app). Verwijderen (✕, met bevestiging — verwijdert ook echt de
+  onderliggende HA-integratie en alle items erin) en herordenen (↑/↓, puur
+  een weergavevoorkeur van de app) kan vanaf het overzicht.
 - **Items**: toevoegen, afvinken, verwijderen, herordenen (↑/↓), en
   optioneel een omschrijving en een einddatum instellen.
 - **Sjablonen**: per lijstje bewaarde presets ("Pasta-avond", "Ontbijt",
@@ -80,7 +82,7 @@ lijstjes/
       ha/
         client.js                 Dunne REST-wrapper rond Home Assistant's Core API
         todo.js                    add/update/remove/move/get items via de todo.*-services
-        lists.js                    Nieuwe lijst aanmaken via de config-entries-flow-API
+        lists.js                    Lijst aanmaken/verwijderen via de config-entries-API
         snapshot.js                 Volledige inhoud van alle lijstjes in één keer
       push.js                     VAPID-sleutels + push-abonnementen + meldingen versturen
       watcher.js                   Achtergrondpoller: detecteert wijzigingen vanuit HA, triggert pushmeldingen
@@ -88,6 +90,7 @@ lijstjes/
       templates.js                  Sjablonen (eigen concept, niet in HA): opslaan/lezen in /data
       stores.js                     Winkels per lijst (eigen concept, niet in HA): opslaan/lezen in /data
       listSettings.js               Sjablonen/Winkels aan/uit per lijst, met auto-detect als default
+      listOrder.js                   Volgorde van lijstjes op het overzicht (eigen concept, niet in HA)
       routes/
         auth.js                     Pairing-status + koppelen met een Long-Lived Access Token
         content.js                   Volledige snapshot voor de eerste (online) vulling
@@ -96,6 +99,7 @@ lijstjes/
         templates.js                   Sjablonen aanmaken/opvragen/verwijderen
         stores.js                       Winkels aanmaken/opvragen/verwijderen
         listSettings.js                 Sjablonen/Winkels aan/uit per lijst opvragen/opslaan
+        listOrder.js                     Volgorde van lijstjes opvragen/opslaan
   frontend/
     index.html, css/               Opmaak
     js/

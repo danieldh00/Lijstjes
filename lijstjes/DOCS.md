@@ -27,6 +27,13 @@ enige bron van waarheid.
   einddatum/omschrijving instellen — dit synchroniseert beide kanten op:
   wijzig je iets via Assist/voice, de HA-app of het dashboard, dan zie je dat
   ook in Lijstjes en omgekeerd.
+- Een lijstje verwijderen (✕ op het overzicht, met bevestiging) verwijdert
+  ook echt de onderliggende `local_todo`-integratie in Home Assistant, inclusief
+  alle items erin — dit kun je niet ongedaan maken.
+- Lijstjes herordenen (↑/↓ op het overzicht) is puur een weergavevoorkeur
+  van de app zelf: dit wijzigt niets in Home Assistant en heeft geen
+  HA-equivalent, maar de volgorde wordt wel bewaard op de add-on (niet per
+  toestel) zodat 'm op al je gekoppelde toestellen hetzelfde is.
 
 ## Sjablonen en winkels aanzetten per lijstje
 

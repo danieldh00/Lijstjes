@@ -8,6 +8,7 @@ const OUTBOX_KEY = 'lijstjes:outbox';
 const TEMPLATES_KEY = 'lijstjes:templates';
 const STORES_KEY = 'lijstjes:stores';
 const LIST_SETTINGS_KEY = 'lijstjes:list-settings';
+const LIST_ORDER_KEY = 'lijstjes:list-order';
 
 // Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
 // pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
@@ -48,6 +49,7 @@ const state = {
   templates: readJSON(TEMPLATES_KEY, []),
   stores: readJSON(STORES_KEY, []),
   listSettings: readJSON(LIST_SETTINGS_KEY, {}),
+  listOrder: readJSON(LIST_ORDER_KEY, []),
 };
 
 function persist() {
@@ -136,6 +138,43 @@ function addListLocal(name) {
   persist();
   const mutation = queueMutation({ type: 'create_list', name, tempListId: tempId });
   return { tempId, mutation };
+}
+
+function removeListLocal(entityId) {
+  state.snapshot.lists = state.snapshot.lists.filter((l) => l.entity_id !== entityId);
+  delete state.snapshot.items[entityId];
+  if (entityId.startsWith('local-list:')) {
+    // Nog geen echte HA-lijst (het aanmaken stond nog in de wachtrij) --
+    // gewoon uit de wachtrij halen, er is niets in HA om te verwijderen.
+    state.outbox = state.outbox.filter((m) => m.tempListId !== entityId && m.entity_id !== entityId);
+    persist();
+    return;
+  }
+  persist();
+  queueMutation({ type: 'delete_list', entity_id: entityId });
+}
+
+// Volgorde van lijstjes op het overzicht -- Home Assistant heeft hier geen
+// instelling voor, dus dit is een losse, puur app-eigen voorkeur.
+function getListOrder() {
+  return state.listOrder;
+}
+
+function setListOrderCache(order) {
+  state.listOrder = order;
+  writeJSON(LIST_ORDER_KEY, state.listOrder);
+}
+
+function getSortedLists() {
+  const lists = state.snapshot.lists;
+  const order = state.listOrder;
+  const byEntityId = new Map(lists.map((l) => [l.entity_id, l]));
+  const sorted = order.map((id) => byEntityId.get(id)).filter(Boolean);
+  const seen = new Set(sorted.map((l) => l.entity_id));
+  for (const list of lists) {
+    if (!seen.has(list.entity_id)) sorted.push(list);
+  }
+  return sorted;
 }
 
 function addItemLocal(entityId, fields) {
@@ -302,6 +341,10 @@ export {
   getOutbox,
   hasContent,
   addListLocal,
+  removeListLocal,
+  getListOrder,
+  setListOrderCache,
+  getSortedLists,
   addItemLocal,
   updateItemLocal,
   removeItemLocal,

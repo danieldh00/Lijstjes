@@ -92,6 +92,7 @@ function renderPairing(error) {
 
 function renderOverview() {
   const snapshot = storage.getSnapshot();
+  const lists = storage.getSortedLists();
   appEl.innerHTML = '';
 
   const header = el(`
@@ -101,19 +102,26 @@ function renderOverview() {
   `);
   appEl.appendChild(header);
 
-  if (!snapshot.lists.length) {
+  if (!lists.length) {
     appEl.appendChild(el(`<div class="empty">Nog geen lijstjes. Maak er hieronder een.</div>`));
   } else {
-    for (const list of snapshot.lists) {
+    for (const list of lists) {
       const items = snapshot.items[list.entity_id] || [];
       const openCount = items.filter((i) => i.status !== 'completed').length;
-      const card = el(`
-        <a class="card list-card ${list.pending ? 'pending' : ''}" href="#/list/${encodeURIComponent(list.entity_id)}">
-          <span class="name">${escapeHtml(list.name)}${list.pending ? ' (wordt aangemaakt…)' : ''}</span>
-          <span class="count">${openCount}</span>
-        </a>
+      const row = el(`
+        <div class="card list-card-row ${list.pending ? 'pending' : ''}" data-entity-id="${escapeHtml(list.entity_id)}">
+          <a class="list-card" href="#/list/${encodeURIComponent(list.entity_id)}">
+            <span class="name">${escapeHtml(list.name)}${list.pending ? ' (wordt aangemaakt…)' : ''}</span>
+            <span class="count">${openCount}</span>
+          </a>
+          <div class="list-card-actions">
+            <button class="icon-btn" data-action="move-up" title="Omhoog">↑</button>
+            <button class="icon-btn" data-action="move-down" title="Omlaag">↓</button>
+            <button class="icon-btn" data-action="delete" title="Verwijderen">✕</button>
+          </div>
+        </div>
       `);
-      appEl.appendChild(card);
+      appEl.appendChild(row);
     }
   }
 
@@ -134,7 +142,46 @@ function renderOverview() {
     input.value = '';
   });
 
+  bindListActions(lists);
   renderPushBanner();
+}
+
+function bindListActions(lists) {
+  appEl.querySelectorAll('.list-card-row').forEach((row) => {
+    const entityId = row.dataset.entityId;
+    row.querySelector('[data-action="move-up"]').addEventListener('click', () => moveList(entityId, -1));
+    row.querySelector('[data-action="move-down"]').addEventListener('click', () => moveList(entityId, 1));
+    row.querySelector('[data-action="delete"]').addEventListener('click', () => {
+      const list = lists.find((l) => l.entity_id === entityId);
+      if (
+        !confirm(
+          `Lijstje "${list ? list.name : entityId}" volledig verwijderen? Alle items hierin gaan permanent verloren, ook in Home Assistant.`
+        )
+      )
+        return;
+      sync.mutateAndSync(() => storage.removeListLocal(entityId));
+    });
+  });
+}
+
+async function moveList(entityId, direction) {
+  const order = storage.getSortedLists().map((l) => l.entity_id);
+  const idx = order.indexOf(entityId);
+  const targetIdx = idx + direction;
+  if (idx === -1 || targetIdx < 0 || targetIdx >= order.length) return;
+
+  const reordered = order.slice();
+  const [moved] = reordered.splice(idx, 1);
+  reordered.splice(targetIdx, 0, moved);
+  storage.setListOrderCache(reordered);
+  render();
+
+  try {
+    await api.setListOrder(reordered);
+  } catch (err) {
+    // niet kritiek voor de werking -- de eerstvolgende refreshListOrder
+    // haalt gewoon de laatst bekende serverstand weer op.
+  }
 }
 
 function renderPushBanner() {

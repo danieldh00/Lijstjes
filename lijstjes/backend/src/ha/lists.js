@@ -71,4 +71,31 @@ async function waitForListEntity(expectedName, fallbackTitle) {
   return { entity_id: null, name: expectedName || fallbackTitle, pending: true };
 }
 
-module.exports = { createTodoList };
+// Verwijdert een lijst door de onderliggende local_todo-integratie te
+// verwijderen (verwijdert ook alle items van die lijst permanent -- er is
+// geen "prullenbak"). HA's todo-domein geeft geen rechtstreekse
+// entity->config-entry-koppeling via de REST API terug, dus matchen we
+// (net als bij het aanmaken hierboven) op naam: de titel van een
+// local_todo-config-entry is altijd de naam die bij het aanmaken is
+// opgegeven, en die komt overeen met de vriendelijke naam van de bijhorende
+// entiteit.
+async function deleteTodoList(entityId) {
+  const states = await haFetch('/states');
+  const entityState = states.find((s) => s.entity_id === entityId);
+  if (!entityState) {
+    throw new Error(`Lijst ${entityId} bestaat niet (meer) in Home Assistant.`);
+  }
+  const friendlyName = (entityState.attributes.friendly_name || '').toLowerCase();
+
+  const entries = await haFetch('/config/config_entries/entry', { query: { domain: 'local_todo' } });
+  const match = entries.find((e) => (e.title || '').toLowerCase() === friendlyName);
+  if (!match) {
+    throw new Error(
+      `Kon de Home Assistant-integratie voor "${entityState.attributes.friendly_name}" niet vinden om te verwijderen.`
+    );
+  }
+
+  await haFetch(`/config/config_entries/entry/${match.entry_id}`, { method: 'DELETE' });
+}
+
+module.exports = { createTodoList, deleteTodoList };
