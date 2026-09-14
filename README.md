@@ -71,6 +71,7 @@ repository.yaml            Herkenningsbestand: maakt deze repo een HA add-on-rep
 docker-compose.yml          Standalone Docker-variant (buiten de add-on-store om)
 lijstjes/
   config.yaml                HA add-on-configuratie (ingress, poort, Supervisor-API)
+  apparmor.txt                AppArmor-profiel (beveiligingsscore 8/8 in Home Assistant)
   DOCS.md                     Documentatie zoals getoond in de HA add-on-store
   Dockerfile
   backend/

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.1
+
+- Eigen AppArmor-profiel toegevoegd (`apparmor.txt`). Daarmee gaat de
+  beveiligingsscore van de add-on in Home Assistant van 7 naar 8 (het
+  maximum): de score telt +1 zodra er een geladen profiel is in plaats van
+  het standaardprofiel. Het profiel staat toe wat de add-on echt doet (Node
+  draaien, de eigen bestanden lezen, naar `/data` schrijven) en weigert de
+  rest — mount/umount, ptrace, schrijven naar kernelinstellingen en alle
+  capabilities buiten de handvol die een root-proces in deze container
+  legitiem gebruikt.
+
 ## 0.8.0
 
 - De achtergrondsynchronisatie werkt het scherm nu gericht bij in plaats van

@@ -1,0 +1,47 @@
+#include <tunables/global>
+
+# AppArmor-profiel voor de Lijstjes-add-on.
+#
+# De Supervisor hernoemt dit profiel bij het installeren automatisch naar de
+# slug van de add-on (adjust_profile) en laadt het op de host. Zolang er een
+# geladen profiel is, telt de add-on als "profile" in plaats van "default" in
+# de beveiligingsscore van Home Assistant.
+#
+# De container draait een kaal Node-proces (`node src/server.js`, zie de
+# Dockerfile) -- geen s6-overlay en geen bashio -- dus dit profiel hoeft alleen
+# Node zelf, de eigen bestanden en /data toe te staan.
+profile lijstjes flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  file,
+  signal,
+
+  # Node draait als containerproces; busybox levert de shell van het
+  # alpine-basisimage.
+  /usr/local/bin/node rix,
+  /bin/** ix,
+  /usr/bin/** ix,
+  /usr/local/bin/** ix,
+  /run/** rwk,
+  /tmp/** rw,
+
+  # Eigen opslag van de add-on: de koppeling met Home Assistant, sjablonen,
+  # winkels, de volgorde van lijstjes, de VAPID-sleutels en de
+  # push-abonnementen.
+  /data/** rw,
+
+  # Wat een root-proces in deze container legitiem nodig heeft. Alle overige
+  # capabilities (net_admin, sys_admin, sys_module, sys_ptrace, net_raw, ...)
+  # blijven hiermee geweigerd.
+  capability chown,
+  capability dac_override,
+  capability fowner,
+  capability setgid,
+  capability setuid,
+
+  # Een webserver hoeft niets van dit alles te doen.
+  deny mount,
+  deny umount,
+  deny ptrace,
+  deny @{PROC}/sys/kernel/** w,
+}
