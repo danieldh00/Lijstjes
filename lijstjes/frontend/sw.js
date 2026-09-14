@@ -26,6 +26,7 @@ const SHELL_FILES = [
   './js/storage.js',
   './js/sync.js',
   './js/push.js',
+  './js/icons.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

@@ -50,6 +50,17 @@ apart account-systeem.
   in Home Assistant (dashboard, Assist, een automatisering), dan krijgen je
   gekoppelde telefoons daar een melding van — ook als de app niet open
   staat. Zie `lijstjes/DOCS.md` voor de details en de iOS-beperkingen.
+- **Automatische lijst-iconen**: elk lijstje krijgt een passend icoon op
+  basis van zijn naam (winkelwagen bij Boodschappen, gereedschap bij
+  Klussen, koffer bij Inpaklijst, cadeau bij een verjaardag...), met een
+  eigen kleur. Bij een nieuw lijstje beweegt het icoon al mee terwijl je de
+  naam typt. Zonder herkenbaar trefwoord volgt een neutraal lijstpictogram
+  met een vaste kleur per naam. De iconen komen uit Material Design Icons —
+  dezelfde set als Home Assistant — en zitten in de app zelf, dus ze werken
+  ook offline.
+- **Opmaak in HA-stijl**: dezelfde kleuren, kaartvorm en donker/licht-tinten
+  als het standaardthema van Home Assistant, zodat de app niet uit de toon
+  valt naast je dashboard.
 - **Icoon**: het officiële Home Assistant-logo met een groen vinkje/todo-
   badge in de hoek, zodat de app herkenbaar is als HA-integratie op je
   beginscherm en in het browsertabblad.
@@ -109,6 +120,7 @@ lijstjes/
       sync.js                        Achtergrondsynchronisatie + online/offline-status
       api.js                         Backend-aanroepen
       push.js                        Meldingen aanzetten: toestemming vragen + push-abonnement registreren
+      icons.js                       Lijst-icoon afleiden uit de naam + MDI-paden (gegenereerd uit @mdi/js)
     manifest.webmanifest, sw.js     PWA-installeerbaarheid + app-shell caching + push-/klikafhandeling
     icons/                          Home Assistant-logo + todo-badge (bron: home-assistant/assets)
 ```

@@ -30,6 +30,12 @@ enige bron van waarheid.
 - Staan er afgevinkte items in een lijstje, dan verschijnt boven die sectie
   een **Legen**-knop: met één tik (en een bevestiging) verwijder je alle
   afgevinkte items tegelijk, ook in Home Assistant.
+- Elk lijstje krijgt automatisch een icoon en kleur op basis van zijn naam:
+  een winkelwagen bij Boodschappen, gereedschap bij Klussen, een koffer bij
+  de Inpaklijst, een cadeau bij een verjaardag. Dit werkt ook voor nieuwe
+  lijstjes — terwijl je de naam typt, zie je het icoon al meebewegen. Kent
+  de app de naam niet, dan krijgt het lijstje een neutraal lijstpictogram
+  met een vaste eigen kleur. Je hoeft dus nooit zelf een icoon te kiezen.
 - Een lijstje verwijderen (✕ op het overzicht, met bevestiging) verwijdert
   ook echt de onderliggende `local_todo`-integratie in Home Assistant, inclusief
   alle items erin — dit kun je niet ongedaan maken.

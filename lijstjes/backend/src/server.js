@@ -47,6 +47,7 @@ const APP_SHELL_FILES = [
   'js/storage.js',
   'js/sync.js',
   'js/push.js',
+  'js/icons.js',
   'manifest.webmanifest',
 ];
 function computeAppVersion() {

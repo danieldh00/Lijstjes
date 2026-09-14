@@ -2,6 +2,7 @@ import api from './api.js';
 import * as storage from './storage.js';
 import * as sync from './sync.js';
 import * as push from './push.js';
+import { uiIcon, listIconChip } from './icons.js';
 
 const appEl = document.getElementById('app');
 const statusEl = document.getElementById('statusbar');
@@ -93,6 +94,14 @@ function renderPairing(error) {
 
 // ---------- Overzicht ----------
 
+function listSubtitle(list, total, openCount) {
+  if (list.pending) return 'Wordt aangemaakt…';
+  if (!total) return 'Leeg';
+  if (!openCount) return 'Alles afgevinkt';
+  const done = total - openCount;
+  return done ? `${openCount} open · ${done} afgevinkt` : `${openCount} open`;
+}
+
 function renderOverview() {
   const snapshot = storage.getSnapshot();
   const lists = storage.getSortedLists();
@@ -114,13 +123,16 @@ function renderOverview() {
       const row = el(`
         <div class="card list-card-row ${list.pending ? 'pending' : ''}" data-entity-id="${escapeHtml(list.entity_id)}">
           <a class="list-card" href="#/list/${encodeURIComponent(list.entity_id)}">
-            <span class="name">${escapeHtml(list.name)}${list.pending ? ' (wordt aangemaakt…)' : ''}</span>
-            <span class="count">${openCount}</span>
+            ${listIconChip(list.name)}
+            <span class="list-text">
+              <span class="name">${escapeHtml(list.name)}</span>
+              <span class="sub">${listSubtitle(list, items.length, openCount)}</span>
+            </span>
           </a>
           <div class="list-card-actions">
-            <button class="icon-btn" data-action="move-up" title="Omhoog">↑</button>
-            <button class="icon-btn" data-action="move-down" title="Omlaag">↓</button>
-            <button class="icon-btn" data-action="delete" title="Verwijderen">✕</button>
+            <button class="icon-btn" data-action="move-up" title="Omhoog">${uiIcon('chevronUp')}</button>
+            <button class="icon-btn" data-action="move-down" title="Omlaag">${uiIcon('chevronDown')}</button>
+            <button class="icon-btn danger" data-action="delete" title="Verwijderen">${uiIcon('close')}</button>
           </div>
         </div>
       `);
@@ -129,12 +141,20 @@ function renderOverview() {
   }
 
   const addForm = el(`
-    <form class="add-form" id="add-list-form">
-      <input type="text" id="new-list-name" placeholder="Nieuw lijstje, bv. Boodschappen" required />
-      <button class="primary" type="submit">Toevoegen</button>
+    <form class="card add-list-form" id="add-list-form">
+      ${listIconChip('', 22)}
+      <input type="text" id="new-list-name" placeholder="Nieuw lijstje…" required />
+      <button class="fab" type="submit" title="Lijstje toevoegen">${uiIcon('plus', 24)}</button>
     </form>
   `);
   appEl.appendChild(addForm);
+
+  // Het icoon volgt de titel, dus laat het meteen meebewegen terwijl er
+  // getypt wordt -- dan is duidelijk dat een nieuw lijstje er ook een krijgt.
+  const nameInput = document.getElementById('new-list-name');
+  nameInput.addEventListener('input', () => {
+    addForm.querySelector('.list-icon').outerHTML = listIconChip(nameInput.value.trim(), 22);
+  });
 
   document.getElementById('add-list-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -263,12 +283,14 @@ function renderListDetail(entityId) {
   const settings = storage.getListSettings(entityId);
   appEl.innerHTML = '';
 
+  const listName = list ? list.name : 'Lijstje';
   appEl.appendChild(
     el(`
     <div class="topbar">
-      <a class="back" href="#/">‹ Lijstjes</a>
-      <h1>${escapeHtml(list ? list.name : 'Lijstje')}</h1>
-      <a class="back" href="#/list/${encodeURIComponent(entityId)}/settings" title="Instellingen">⚙</a>
+      <a class="back" href="#/" title="Terug">${uiIcon('back', 26)}</a>
+      ${listIconChip(listName, 20)}
+      <h1>${escapeHtml(listName)}</h1>
+      <a class="back" href="#/list/${encodeURIComponent(entityId)}/settings" title="Instellingen">${uiIcon('cog', 22)}</a>
     </div>
   `)
   );
@@ -432,9 +454,9 @@ function renderItemList(entityId, items) {
           ` : ''}
         </div>
         <div class="item-actions">
-          <button class="icon-btn" data-action="move-up" title="Omhoog">↑</button>
-          <button class="icon-btn" data-action="move-down" title="Omlaag">↓</button>
-          <button class="icon-btn" data-action="delete" title="Verwijderen">✕</button>
+          <button class="icon-btn" data-action="move-up" title="Omhoog">${uiIcon('chevronUp', 18)}</button>
+          <button class="icon-btn" data-action="move-down" title="Omlaag">${uiIcon('chevronDown', 18)}</button>
+          <button class="icon-btn danger" data-action="delete" title="Verwijderen">${uiIcon('close', 18)}</button>
         </div>
       </div>
     `);
@@ -756,7 +778,13 @@ function restoreUiState(ui) {
     if (next) {
       // Wat er stond is wat de gebruiker zelf aan het typen was -- dat wint
       // van de opnieuw opgebouwde (lege) waarde.
-      if (ui.focus.value !== undefined && 'value' in next) next.value = ui.focus.value;
+      if (ui.focus.value !== undefined && 'value' in next) {
+        next.value = ui.focus.value;
+        // Opmaak die van de ingetypte waarde afhangt (zoals het icoonvoorbeeld
+        // bij een nieuw lijstje) hangt aan het input-event; dat komt bij een
+        // programmatische toekenning niet vanzelf.
+        next.dispatchEvent(new Event('input', { bubbles: true }));
+      }
       next.focus({ preventScroll: true });
       if (ui.focus.start != null && next.setSelectionRange) {
         // Niet elk invoertype ondersteunt een selectiebereik (date e.d.).

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.0
+
+- Nieuw uiterlijk, in de stijl van Home Assistant zelf: dezelfde kleuren
+  (het lichtblauw van HA in plaats van groen), dezelfde kaartvorm en
+  dezelfde donker/licht-tinten als het standaardthema.
+- Elk lijstje krijgt automatisch een passend icoon op basis van de naam —
+  een winkelwagen bij Boodschappen, gereedschap bij Klussen, een koffer bij
+  de Inpaklijst, een cadeau bij een verjaardag, enzovoort. Dat gebeurt ook
+  meteen voor een nieuw lijstje: terwijl je de naam typt zie je het icoon al
+  meebewegen. Herkent de app geen trefwoord, dan volgt een neutraal
+  lijstpictogram met een vaste kleur per naam.
+- De iconen komen uit Material Design Icons, dezelfde set die Home Assistant
+  gebruikt. Alleen de gebruikte iconen zitten in de app, dus er wordt niets
+  extern geladen en ze werken gewoon offline.
+- Elke lijstrij toont nu in één oogopslag hoeveel er nog open staat
+  ("2 open · 1 afgevinkt", "Alles afgevinkt", "Leeg") in plaats van alleen
+  een kaal getal, en de knopjes zijn echte iconen met een fatsoenlijk
+  aanraakgebied geworden.
+
 ## 0.8.1
 
 - Eigen AppArmor-profiel toegevoegd (`apparmor.txt`). Daarmee gaat de
