@@ -1,0 +1,19 @@
+{
+  "name": "lijstjes-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline-first lijstjes-app backend, synchroniseert met Home Assistant to-do-lijsten",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "express": "^4.19.2",
+    "web-push": "^3.6.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

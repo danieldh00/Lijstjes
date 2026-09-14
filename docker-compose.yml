@@ -1,0 +1,15 @@
+services:
+  app:
+    build: ./lijstjes
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3100}:3100"
+    environment:
+      - PORT=3100
+      - HA_URL=${HA_URL:-}
+      - HA_TOKEN=${HA_TOKEN:-}
+    volumes:
+      - lijstjes-data:/app/data
+
+volumes:
+  lijstjes-data:

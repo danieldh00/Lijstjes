@@ -1,0 +1,31 @@
+name: "Lijstjes"
+version: "0.2.1"
+slug: lijstjes
+description: >-
+  Offline-first lijstjes-app die synchroniseert met de Home Assistant
+  to-do-lijsten (todo-integraties zoals Local To-do). Geen eigen account
+  nodig: gebruikt je Home Assistant-instantie als enige bron van waarheid.
+  Werkt ook als installeerbare PWA op iPhone/iPad, volledig offline zodra
+  je één keer verbonden bent geweest.
+url: "https://github.com/danieldh00/lijstjes"
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+ports:
+  3100/tcp: 3100
+ports_description:
+  3100/tcp: "Webinterface (los van ingress, nodig voor installeerbare PWA)"
+webui: "http://[HOST]:[PORT:3100]/"
+ingress: true
+ingress_port: 0
+panel_icon: mdi:format-list-checks
+panel_title: Lijstjes
+homeassistant_api: true
+hassio_api: true
+environment:
+  DATA_DIR: /data
+options: {}
+schema:
+  public_url: "str?"
