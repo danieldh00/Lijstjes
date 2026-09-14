@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2
+
+- Stijlfix: de winkel-dropdown (bij een item toevoegen en bewerken) gebruikte
+  de kale standaardstijl van de browser en viel daardoor lelijk uit de toon
+  tussen de afgeronde, donkere velden van de rest van de app. Consistente
+  styling toegevoegd (zelfde pilvorm, kleuren en een subtiel pijltje) zodat
+  het aansluit bij de rest.
+
 ## 0.5.1
 
 - Bugfix: een al geïnstalleerde PWA kon op een oude versie van de app
