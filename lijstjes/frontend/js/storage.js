@@ -6,6 +6,7 @@
 const SNAPSHOT_KEY = 'lijstjes:snapshot';
 const OUTBOX_KEY = 'lijstjes:outbox';
 const TEMPLATES_KEY = 'lijstjes:templates';
+const STORES_KEY = 'lijstjes:stores';
 
 // Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
 // pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
@@ -44,6 +45,7 @@ const state = {
   snapshot: readJSON(SNAPSHOT_KEY, { lists: [], items: {}, syncedAt: null }),
   outbox: readJSON(OUTBOX_KEY, []),
   templates: readJSON(TEMPLATES_KEY, []),
+  stores: readJSON(STORES_KEY, []),
 };
 
 function persist() {
@@ -66,6 +68,17 @@ function getTemplates(entityId) {
 function setTemplatesCache(templates) {
   state.templates = templates;
   writeJSON(TEMPLATES_KEY, state.templates);
+}
+
+// Winkels ("waar moet dit gehaald worden") -- zelfde opzet als sjablonen:
+// een los gecachet lijstje per lijst, niet iets van Home Assistant zelf.
+function getStores(entityId) {
+  return state.stores.filter((s) => s.entity_id === entityId);
+}
+
+function setStoresCache(stores) {
+  state.stores = stores;
+  writeJSON(STORES_KEY, state.stores);
 }
 
 function getOutboxSize() {
@@ -279,6 +292,8 @@ export {
   adoptBackgroundSnapshot,
   getTemplates,
   setTemplatesCache,
+  getStores,
+  setStoresCache,
   findList,
   findItem,
 };

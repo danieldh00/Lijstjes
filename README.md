@@ -22,6 +22,12 @@ apart account-systeem.
   of gewoon een vaak terugkerend los item) die met één tik alle items in
   één keer toevoegen — werkt ook offline. Eigen concept van de app, staat
   niet in Home Assistant zelf.
+- **Winkels**: per lijstje meerdere winkels toevoegen (handig voor
+  boodschappen — Albert Heijn, Jumbo, de bakker), items eraan toewijzen en
+  de lijst automatisch per winkel zien gegroepeerd. De koppeling item→winkel
+  staat in HA's eigen omschrijving-veld (blijft dus zichtbaar via Assist/de
+  HA-app); welke winkels er zijn, staat net als sjablonen in de eigen
+  opslag van de add-on.
 - **Geen accounts**: in plaats van een eigen inlogsysteem koppel je de app
   eenmalig aan Home Assistant met een **Long-Lived Access Token** — dat ene
   token *is* de koppeling, er is niets anders te beheren.
@@ -76,12 +82,14 @@ lijstjes/
       watcher.js                   Achtergrondpoller: detecteert wijzigingen vanuit HA, triggert pushmeldingen
       recentActors.js               Onthoudt welk toestel net zelf iets wijzigde (geen dubbele melding)
       templates.js                  Sjablonen (eigen concept, niet in HA): opslaan/lezen in /data
+      stores.js                     Winkels per lijst (eigen concept, niet in HA): opslaan/lezen in /data
       routes/
         auth.js                     Pairing-status + koppelen met een Long-Lived Access Token
         content.js                   Volledige snapshot voor de eerste (online) vulling
         sync.js                      Offline-wachtrij van mutaties verwerken (idempotent)
         push.js                       VAPID-sleutel opvragen + toestel (de)abonneren op pushmeldingen
         templates.js                   Sjablonen aanmaken/opvragen/verwijderen
+        stores.js                       Winkels aanmaken/opvragen/verwijderen
   frontend/
     index.html, css/               Opmaak
     js/

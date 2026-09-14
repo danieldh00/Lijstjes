@@ -74,6 +74,18 @@ async function refreshTemplates() {
   }
 }
 
+// Winkels wijzigen net als sjablonen zelden en zijn geen Home
+// Assistant-data -- zelfde behandeling: los ophalen en cachen.
+async function refreshStores() {
+  try {
+    const { stores } = await api.stores();
+    storage.setStoresCache(stores);
+    notify();
+  } catch (err) {
+    // stil falen -- geen netwerk, of nog geen winkels aangemaakt
+  }
+}
+
 async function init() {
   // Voordat we ook maar iets over het netwerk proberen: is er een snapshot
   // die de service worker op de achtergrond heeft opgehaald (via een
@@ -117,6 +129,7 @@ async function init() {
 
   flush();
   refreshTemplates();
+  refreshStores();
 }
 
 function mutateAndSync(mutateFn) {
@@ -126,4 +139,4 @@ function mutateAndSync(mutateFn) {
   return result;
 }
 
-export { init, onChange, onStatus, flush, mutateAndSync, refreshTemplates };
+export { init, onChange, onStatus, flush, mutateAndSync, refreshTemplates, refreshStores };

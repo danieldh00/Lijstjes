@@ -25,6 +25,9 @@ const api = {
   templates: () => request('/api/templates'),
   createTemplate: (data) => request('/api/templates', { method: 'POST', body: data }),
   deleteTemplate: (id) => request(`/api/templates/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  stores: () => request('/api/stores'),
+  createStore: (data) => request('/api/stores', { method: 'POST', body: data }),
+  deleteStore: (id) => request(`/api/stores/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
 
 export default api;

@@ -40,6 +40,22 @@ Home Assistant-concept: ze staan alleen in de eigen opslag van deze add-on,
 niet in HA zelf. Aanmaken en verwijderen van een sjabloon vereist wel
 online te zijn.
 
+## Winkels: items groeperen op waar je ze moet halen
+
+Handig voor een boodschappenlijstje met meerdere vaste winkels. Voeg bij een
+lijstje via "+ Winkel" een of meer winkels toe (bv. Albert Heijn, Jumbo, de
+bakker); wijs bij het toevoegen of bewerken van een item een winkel toe. De
+lijst groepeert open items dan automatisch per winkel, zodat je overzichtelijk
+per winkel kunt afvinken. Gebruik je geen winkels, dan blijft de lijst gewoon
+plat zoals altijd.
+
+Net als sjablonen is dit geen apart HA-concept — welke winkels er per lijst
+bestaan staat in de eigen opslag van de add-on. De koppeling van een *item*
+aan een winkel staat wél gewoon in Home Assistant zelf (in het
+omschrijving-veld van het item, als eerste regel met een 🏪-icoontje ervoor),
+dus die blijft ook zichtbaar en bruikbaar als je het lijstje via de HA-app of
+Assist bekijkt.
+
 ## Offline gebruik & synchronisatie
 
 De app is *local-first*: eenmaal geopend (via de directe poort-3100-route,

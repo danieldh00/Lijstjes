@@ -181,6 +181,29 @@ function formatDue(item) {
   return null;
 }
 
+// Home Assistant's todo-items hebben geen eigen "winkel"-veld. We coderen de
+// winkel daarom als eerste regel van het bestaande description-veld (blijft
+// zo ook gewoon zichtbaar in de HA-app/Assist), met een vaste emoji-prefix
+// zodat 'ie betrouwbaar terug te lezen is; de rest van de tekst is de
+// gewone, vrije omschrijving.
+const STORE_PREFIX = '🏪 ';
+
+function parseItemMeta(description) {
+  if (!description) return { store: null, note: '' };
+  const [firstLine, ...rest] = description.split('\n');
+  if (firstLine.startsWith(STORE_PREFIX)) {
+    return { store: firstLine.slice(STORE_PREFIX.length).trim(), note: rest.join('\n').trim() };
+  }
+  return { store: null, note: description };
+}
+
+function buildDescription(store, note) {
+  const parts = [];
+  if (store) parts.push(`${STORE_PREFIX}${store}`);
+  if (note) parts.push(note);
+  return parts.length ? parts.join('\n') : '';
+}
+
 function renderListDetail(entityId) {
   const snapshot = storage.getSnapshot();
   const list = storage.findList(entityId);
@@ -197,9 +220,18 @@ function renderListDetail(entityId) {
   `)
   );
 
+  renderStoreManagement(entityId);
+
+  const stores = storage.getStores(entityId);
   const addForm = el(`
     <form class="add-form" id="add-item-form">
       <input type="text" id="new-item-summary" placeholder="Item toevoegen…" required />
+      ${stores.length ? `
+        <select id="new-item-store">
+          <option value="">Winkel</option>
+          ${stores.map((s) => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('')}
+        </select>
+      ` : ''}
       <button class="primary" type="submit">+</button>
     </form>
   `);
@@ -210,7 +242,7 @@ function renderListDetail(entityId) {
   const open = items.filter((i) => i.status !== 'completed');
   const done = items.filter((i) => i.status === 'completed');
 
-  appEl.appendChild(renderItemList(entityId, open));
+  appEl.appendChild(renderGroupedItems(entityId, open, stores));
 
   if (done.length) {
     appEl.appendChild(el(`<div class="section-title">Afgevinkt</div>`));
@@ -226,11 +258,94 @@ function renderListDetail(entityId) {
     const input = document.getElementById('new-item-summary');
     const summary = input.value.trim();
     if (!summary) return;
-    sync.mutateAndSync(() => storage.addItemLocal(entityId, { summary }));
+    const storeSelect = document.getElementById('new-item-store');
+    const store = storeSelect ? storeSelect.value : '';
+    sync.mutateAndSync(() => storage.addItemLocal(entityId, { summary, description: buildDescription(store, '') }));
     input.value = '';
+    if (storeSelect) storeSelect.value = '';
   });
 
   bindItemActions(entityId);
+}
+
+// Winkels ("waar moet dit gehaald worden") beheren voor deze lijst. Zonder
+// winkels aangemaakt blijft dit onopvallend -- gewoon één "+ Winkel"-chip,
+// geen aparte sectie die in de weg zit voor lijstjes die dit niet gebruiken.
+function renderStoreManagement(entityId) {
+  const stores = storage.getStores(entityId);
+  const row = el(`<div class="template-chips"></div>`);
+  appEl.appendChild(row);
+
+  for (const store of stores) {
+    const chip = el(`
+      <span class="template-chip">
+        <span class="chip-apply" style="cursor:default;">${escapeHtml(store.name)}</span>
+        <button type="button" class="chip-delete" data-id="${escapeHtml(store.id)}" title="Winkel verwijderen">✕</button>
+      </span>
+    `);
+    row.appendChild(chip);
+  }
+  row.appendChild(el(`<button type="button" class="chip-new" id="new-store-btn">+ Winkel</button>`));
+
+  row.querySelectorAll('.chip-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const store = stores.find((s) => s.id === btn.dataset.id);
+      if (!store || !confirm(`Winkel "${store.name}" verwijderen? (items blijven staan, verliezen alleen het label)`)) return;
+      try {
+        await api.deleteStore(store.id);
+        await sync.refreshStores();
+        render();
+      } catch (err) {
+        alert(`Kon winkel niet verwijderen: ${err.message}`);
+      }
+    });
+  });
+
+  document.getElementById('new-store-btn').addEventListener('click', async () => {
+    const name = prompt('Naam van de winkel (bv. Albert Heijn):');
+    if (!name || !name.trim()) return;
+    try {
+      await api.createStore({ name: name.trim(), entity_id: entityId });
+      await sync.refreshStores();
+      render();
+    } catch (err) {
+      alert(`Kon winkel niet opslaan: ${err.message}`);
+    }
+  });
+}
+
+// Groepeert open items per winkel zodat je overzichtelijk per winkel kunt
+// afvinken. Gebruikt de winkel niet (of helemaal geen winkels aangemaakt),
+// dan ziet dit er exact zo uit als een gewone platte lijst.
+function renderGroupedItems(entityId, items, stores) {
+  const groups = new Map();
+  for (const item of items) {
+    const { store } = parseItemMeta(item.description);
+    const key = store || null;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+
+  const wrap = document.createElement('div');
+  if (!groups.size) return wrap;
+
+  const onlyUnassigned = groups.size === 1 && groups.has(null);
+  if (onlyUnassigned) {
+    wrap.appendChild(renderItemList(entityId, groups.get(null)));
+    return wrap;
+  }
+
+  const orderedKeys = stores.map((s) => s.name).filter((name) => groups.has(name));
+  for (const key of groups.keys()) {
+    if (key !== null && !orderedKeys.includes(key)) orderedKeys.push(key); // verwijderde winkel, item heeft 'm nog
+  }
+  if (groups.has(null)) orderedKeys.push(null);
+
+  for (const key of orderedKeys) {
+    wrap.appendChild(el(`<div class="section-title">${key ? escapeHtml(key) : 'Zonder winkel'}</div>`));
+    wrap.appendChild(renderItemList(entityId, groups.get(key)));
+  }
+  return wrap;
 }
 
 function renderItemList(entityId, items) {
@@ -238,15 +353,17 @@ function renderItemList(entityId, items) {
   if (!items.length) return el(`<div></div>`);
   for (const item of items) {
     const due = formatDue(item);
+    const { store, note } = parseItemMeta(item.description);
     const row = el(`
       <div class="item-row ${item.status === 'completed' ? 'completed' : ''}" data-uid="${escapeHtml(item.uid)}">
         <button class="checkbox ${item.status === 'completed' ? 'checked' : ''}" data-action="toggle">${item.status === 'completed' ? '✓' : ''}</button>
         <div class="item-body" data-action="edit">
           <div class="item-summary">${escapeHtml(item.summary)}</div>
-          ${item.description || due ? `
+          ${note || due || (store && item.status === 'completed') ? `
             <div class="item-meta">
               ${due ? `<span>📅 ${escapeHtml(due)}</span>` : ''}
-              ${item.description ? `<span>${escapeHtml(item.description)}</span>` : ''}
+              ${store && item.status === 'completed' ? `<span>🏪 ${escapeHtml(store)}</span>` : ''}
+              ${note ? `<span>${escapeHtml(note)}</span>` : ''}
             </div>
           ` : ''}
         </div>
@@ -421,14 +538,24 @@ function renderItemEdit(entityId, uid) {
   );
 
   const dueDateValue = item.due_date || (item.due_datetime ? item.due_datetime.slice(0, 10) : '');
+  const { store: currentStore, note: currentNote } = parseItemMeta(item.description);
+  const stores = storage.getStores(entityId);
 
   const form = el(`
     <form class="item-form" id="item-edit-form">
       <label for="summary">Tekst</label>
       <input id="summary" type="text" value="${escapeHtml(item.summary)}" required />
 
+      ${stores.length ? `
+        <label for="store">Winkel (optioneel)</label>
+        <select id="store">
+          <option value="">Geen winkel</option>
+          ${stores.map((s) => `<option value="${escapeHtml(s.name)}" ${s.name === currentStore ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+        </select>
+      ` : ''}
+
       <label for="description">Omschrijving (optioneel)</label>
-      <textarea id="description" rows="2">${escapeHtml(item.description || '')}</textarea>
+      <textarea id="description" rows="2">${escapeHtml(currentNote)}</textarea>
 
       <label for="due_date">Einddatum (optioneel)</label>
       <input id="due_date" type="date" value="${escapeHtml(dueDateValue)}" />
@@ -448,12 +575,14 @@ function renderItemEdit(entityId, uid) {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const summary = document.getElementById('summary').value.trim();
-    const description = document.getElementById('description').value.trim();
+    const note = document.getElementById('description').value.trim();
+    const storeSelect = document.getElementById('store');
+    const store = storeSelect ? storeSelect.value : currentStore;
     const dueDate = document.getElementById('due_date').value;
     sync.mutateAndSync(() =>
       storage.updateItemLocal(entityId, uid, {
         summary,
-        description,
+        description: buildDescription(store, note),
         due_date: dueDate,
       })
     );

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0
+
+- Winkels: per lijstje ("bij welke winkel moet dit gehaald worden") een of
+  meer winkels toevoegen, items eraan toewijzen bij het toevoegen of
+  bewerken, en de lijst automatisch per winkel gegroepeerd zien — handig
+  om een boodschappenlijstje overzichtelijk te houden als je bij meerdere
+  winkels langsgaat. Geen winkels aangemaakt? Dan verandert er niets aan
+  hoe een lijstje eruitziet. De koppeling van een item aan een winkel staat
+  in Home Assistant's eigen omschrijving-veld van dat item (zichtbaar via
+  Assist/de HA-app); welke winkels er per lijst bestaan, staat net als
+  sjablonen in de eigen opslag van de add-on.
+
 ## 0.4.0
 
 - Sjablonen: per lijstje een naam plus items opslaan (bv. een maaltijd
