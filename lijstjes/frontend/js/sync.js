@@ -72,6 +72,15 @@ function init() {
     if (document.visibilityState === 'visible') flush();
   });
 
+  // Op iOS/Safari (vooral een geïnstalleerde PWA die uit de achtergrond/
+  // appswitcher terugkomt) vuurt visibilitychange lang niet altijd af, en
+  // kan de pagina bovendien ongewijzigd uit de bfcache worden hersteld
+  // zonder dat onze JS opnieuw start -- dan blijft de laatst gerenderde
+  // (mogelijk verouderde) snapshot gewoon staan. pageshow en focus zijn op
+  // iOS betrouwbaarder voor "de app is weer in beeld, haal verse data op".
+  window.addEventListener('pageshow', () => flush());
+  window.addEventListener('focus', () => flush());
+
   flush();
 }
 

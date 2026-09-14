@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.2
+
+- Layoutfix: de app-inhoud en de statusbalk hielden geen rekening met de
+  safe-area van het toestel (notch/dynamic island/statusbalk), waardoor de
+  bovenkant van het scherm er op de installeerbare PWA afgeknipt uitzag.
+- Bugfix: op iOS kwam een wijziging die rechtstreeks in Home Assistant
+  gemaakt was er niet automatisch in de app doorheen totdat je 'm expliciet
+  opnieuw opende. `visibilitychange` (waar de her-sync bij het heropenen op
+  leunde) vuurt op een geïnstalleerde iOS-PWA niet betrouwbaar af, en de
+  pagina kan bovendien ongewijzigd uit de bfcache worden hersteld zonder dat
+  onze code opnieuw draait. Toegevoegd: een verse sync bij `pageshow` en
+  `focus`, die op iOS wel betrouwbaar afgaan zodra de app weer in beeld komt.
+
 ## 0.2.1
 
 - Bugfix: koppelen met een Long-Lived Access Token via de directe
