@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.1
+
+- Bugfix: een al geïnstalleerde PWA kon op een oude versie van de app
+  blijven hangen na een update. `sw.js` gebruikte een vast, met de hand
+  ingesteld cachenummer (`lijstjes-shell-v1`) dat nooit veranderde -- de
+  browser vergelijkt bij het bepalen of er een nieuwe service worker is de
+  bytes van `sw.js` zelf, dus zolang dat bestand toevallig niet meewijzigde
+  (bv. bij een update aan alleen `app.js`/`storage.js`/de CSS) zag de
+  browser geen aanleiding om opnieuw te installeren en bleven oude
+  bestanden in de cache staan. Zelfde fix als bij Russisch Leren: de server
+  hasht de app-shell-bestanden bij het opstarten en serveert `/sw.js`
+  dynamisch met die hash in de cachenaam verwerkt, plus
+  `Cache-Control: no-cache` op die respons zodat ook de browser's eigen
+  HTTP-cache het bestand nooit stiekem verouderd teruggeeft. Voegt ook
+  netwerk-eerst laden van de pagina zelf toe (in plaats van cache-eerst),
+  zodat een online sessie altijd de nieuwste versie ziet.
+
 ## 0.5.0
 
 - Winkels: per lijstje ("bij welke winkel moet dit gehaald worden") een of

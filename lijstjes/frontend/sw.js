@@ -5,7 +5,16 @@
 // "push") gebruiken we een apart datacache: een service worker heeft geen
 // toegang tot localStorage (dat bestaat alleen in een paginacontext), de
 // Cache API is wel vanuit beide bereikbaar.
-const CACHE_NAME = 'lijstjes-shell-v1';
+// __CACHE_VERSION__ wordt door de server vervangen (zie server.js) door een
+// hash van de app-shell-bestanden, zodat de cachenaam -- en daarmee de
+// identiteit van deze hele service worker voor de browser -- automatisch
+// verandert bij elke deploy die de app wijzigt, zonder dat iemand een
+// versienummer met de hand moet ophogen. Was tot nu toe een vast
+// 'lijstjes-shell-v1': de browser detecteerde een nieuwe sw.js dan alleen
+// als sw.js zélf toevallig ook wijzigde, waardoor updates aan alleen
+// app.js/storage.js/css soms niet (op tijd) doorkwamen op een al
+// geïnstalleerd toestel.
+const CACHE_NAME = 'lijstjes-shell-__CACHE_VERSION__';
 const DATA_CACHE_NAME = 'lijstjes-data-v1';
 const SNAPSHOT_REQUEST = new Request('/__offline-snapshot__');
 const SHELL_FILES = [
@@ -109,23 +118,50 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/api/') || event.request.method !== 'GET') {
+  const { request } = event;
+  const url = new URL(request.url);
+  if (url.pathname.startsWith('/api/') || request.method !== 'GET') {
     return; // altijd naar het netwerk, nooit cachen
   }
+  if (url.pathname === '/sw.js') {
+    return; // nooit zelf onderscheppen -- de browser moet dit bestand altijd rechtstreeks kunnen ophalen om een update te herkennen
+  }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
+  if (request.mode === 'navigate') {
+    // Voor het laden van de pagina zelf: netwerk-eerst, zodat een sessie die
+    // online is altijd de nieuwste HTML/routering ziet in plaats van de
+    // laatst gecachete versie. Alleen bij een mislukte netwerkpoging (echt
+    // offline) valt dit terug op de gecachete shell.
+    event.respondWith(
+      fetch(request)
         .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('./', copy));
           return response;
         })
-        .catch(() => cached);
-      return cached || network;
-    })
+        .catch(() => caches.match('./'))
+    );
+    return;
+  }
+
+  // stale-while-revalidate voor de overige app-shell-bestanden (css/js/
+  // iconen): meteen uit cache antwoorden (blijft snel en volledig offline
+  // bruikbaar), en op de achtergrond opnieuw ophalen om de cache voor de
+  // volgende keer bij te werken. Samen met de automatisch opgehoogde
+  // CACHE_NAME hierboven is dit wat voorkomt dat een al geïnstalleerde PWA
+  // na een deploy op verouderde CSS/JS blijft hangen, zonder dat iemand
+  // zelf de browsercache hoeft te legen.
+  event.respondWith(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(request).then((cached) => {
+        const network = fetch(request)
+          .then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          })
+          .catch(() => cached);
+        return cached || network;
+      })
+    )
   );
 });
