@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.1
+
+- Bugfix: koppelen met een Long-Lived Access Token via de directe
+  poort-3100-route mislukte altijd wanneer de app als add-on draait
+  ("Dit token werkt niet bij dat Home Assistant-adres" bij een geldig
+  token). De pairing-check controleerde het token via Supervisor's eigen
+  add-on-naar-Supervisor-proxy (`http://supervisor/core`), die alleen de
+  eigen add-on-token van deze add-on accepteert en geen willekeurig
+  gebruikerstoken doorgeeft aan Home Assistant Core. Gefixt door het
+  token rechtstreeks te controleren bij Home Assistant Core zelf
+  (`http://homeassistant:8123`, bereikbaar dankzij `homeassistant_api:
+  true`). De pairing-foutmelding onderscheidt nu ook "kon Home Assistant
+  niet bereiken" van "het token klopt niet".
+
 ## 0.2.0
 
 - App-icoon is nu het officiële Home Assistant-logo met een groen

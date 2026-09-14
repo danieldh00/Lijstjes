@@ -24,7 +24,14 @@ router.post('/pair', async (req, res, next) => {
 
     let validateBaseUrl;
     if (isSupervised()) {
-      validateBaseUrl = 'http://supervisor/core';
+      // http://supervisor/core is Supervisor's OWN proxy, authenticated with
+      // this add-on's SUPERVISOR_TOKEN -- it does not relay an arbitrary
+      // user-supplied bearer token through to Core, so validating the
+      // pasted token there always fails regardless of whether it's valid.
+      // homeassistant_api: true (config.yaml) grants direct network access
+      // to the real Core container instead, where a normal Long-Lived
+      // Access Token does get validated properly.
+      validateBaseUrl = 'http://homeassistant:8123';
     } else {
       const existing = getOperatingCredential();
       validateBaseUrl = haUrl || (existing ? existing.baseUrl.replace(/\/api$/, '') : null);
@@ -36,8 +43,14 @@ router.post('/pair', async (req, res, next) => {
       }
     }
 
-    const ok = await validateToken(validateBaseUrl, token);
-    if (!ok) {
+    const result = await validateToken(validateBaseUrl, token);
+    if (!result.ok) {
+      if (result.reason === 'unreachable') {
+        return res.status(502).json({
+          error: 'ha_unreachable',
+          message: `Kon Home Assistant niet bereiken op ${validateBaseUrl} (${result.detail}).`,
+        });
+      }
       return res.status(401).json({ error: 'invalid_token', message: 'Dit token werkt niet bij dat Home Assistant-adres.' });
     }
 

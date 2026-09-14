@@ -44,15 +44,21 @@ async function haFetch(pathSuffix, { method = 'GET', body, query } = {}) {
 // Los van getOperatingCredential(): controleert of een door de gebruiker
 // aangeleverd token (pairing-scherm) daadwerkelijk toegang geeft tot de
 // opgegeven Home Assistant-instantie, ongeacht wat de server zelf al als
-// credential gebruikt.
+// credential gebruikt. Onderscheidt "kon Home Assistant niet bereiken"
+// (netwerk-/adresprobleem) van "bereikt, maar het token klopt niet" --
+// twee heel verschillende dingen om aan een gebruiker te melden.
 async function validateToken(baseUrl, token) {
   const url = `${baseUrl.replace(/\/+$/, '')}/api/`;
+  let res;
   try {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    return res.ok;
+    res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   } catch (err) {
-    return false;
+    return { ok: false, reason: 'unreachable', detail: err.message };
   }
+  if (!res.ok) {
+    return { ok: false, reason: res.status === 401 || res.status === 403 ? 'unauthorized' : 'error', status: res.status };
+  }
+  return { ok: true };
 }
 
 module.exports = { haFetch, validateToken };
