@@ -2,6 +2,7 @@ const express = require('express');
 const { addItem, updateItem, removeItem, moveItem, getItems } = require('../ha/todo');
 const { createTodoList } = require('../ha/lists');
 const { buildSnapshot } = require('../ha/snapshot');
+const { markActor } = require('../recentActors');
 
 const router = express.Router();
 
@@ -94,6 +95,8 @@ router.post('/', async (req, res, next) => {
         results.push({ clientMutationId, ok: false, error: err.message });
       }
     }
+
+    if (mutations.length) markActor(req.deviceId);
 
     res.json({ results, snapshot: await buildSnapshot() });
   } catch (err) {

@@ -18,6 +18,7 @@ function requireAccess(req, res, next) {
 
   const cookieToken = req.cookies?.[COOKIE_NAME];
   if (cookieToken && verify(cookieToken)) {
+    req.deviceId = cookieToken;
     return next();
   }
 

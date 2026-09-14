@@ -30,6 +30,13 @@ apart account-systeem.
 - **Offline-first + synchronisatie**: eenmaal geopend werkt de app volledig
   zonder netwerk (bv. in de supermarkt zonder bereik) en synchroniseert op
   de achtergrond zodra er weer verbinding is — zie hieronder.
+- **Pushmeldingen vanuit Home Assistant**: wijzig je een lijstje rechtstreeks
+  in Home Assistant (dashboard, Assist, een automatisering), dan krijgen je
+  gekoppelde telefoons daar een melding van — ook als de app niet open
+  staat. Zie `lijstjes/DOCS.md` voor de details en de iOS-beperkingen.
+- **Icoon**: het officiële Home Assistant-logo met een groen vinkje/todo-
+  badge in de hoek, zodat de app herkenbaar is als HA-integratie op je
+  beginscherm en in het browsertabblad.
 
 ## Techniek
 
@@ -61,10 +68,14 @@ lijstjes/
         todo.js                    add/update/remove/move/get items via de todo.*-services
         lists.js                    Nieuwe lijst aanmaken via de config-entries-flow-API
         snapshot.js                 Volledige inhoud van alle lijstjes in één keer
+      push.js                     VAPID-sleutels + push-abonnementen + meldingen versturen
+      watcher.js                   Achtergrondpoller: detecteert wijzigingen vanuit HA, triggert pushmeldingen
+      recentActors.js               Onthoudt welk toestel net zelf iets wijzigde (geen dubbele melding)
       routes/
         auth.js                     Pairing-status + koppelen met een Long-Lived Access Token
         content.js                   Volledige snapshot voor de eerste (online) vulling
         sync.js                      Offline-wachtrij van mutaties verwerken (idempotent)
+        push.js                       VAPID-sleutel opvragen + toestel (de)abonneren op pushmeldingen
   frontend/
     index.html, css/               Opmaak
     js/
@@ -72,8 +83,9 @@ lijstjes/
       storage.js                     Lokale offline-opslag (localStorage): snapshot + outbox
       sync.js                        Achtergrondsynchronisatie + online/offline-status
       api.js                         Backend-aanroepen
-    manifest.webmanifest, sw.js     PWA-installeerbaarheid + app-shell caching
-    icons/
+      push.js                        Meldingen aanzetten: toestemming vragen + push-abonnement registreren
+    manifest.webmanifest, sw.js     PWA-installeerbaarheid + app-shell caching + push-/klikafhandeling
+    icons/                          Home Assistant-logo + todo-badge (bron: home-assistant/assets)
 ```
 
 ## Installeren op Home Assistant (aanbevolen)
@@ -114,8 +126,24 @@ halen); daarna werkt alles lokaal — een lijstje openen, een item afvinken of
 toevoegen — en komt elke wijziging in een lokale wachtrij die naar Home
 Assistant gestuurd wordt zodra er weer verbinding is.
 
+## Over het icoon
+
+Het app-icoon is het officiële Home Assistant-logomerk (bron:
+[home-assistant/assets](https://github.com/home-assistant/assets), met een
+eigen groene vink-badge erbovenop voor het "todo"-karakter van deze app. Dit
+logo is een handelsmerk van de Open Home Foundation; gebruik als icoon van
+een persoonlijke, niet-commerciële Home Assistant-integratie zoals deze
+add-on valt binnen hun richtlijnen, maar niet binnen commercieel gebruik.
+Zie `home-assistant-assets/logo/README.md` (of
+[design.home-assistant.io](https://design.home-assistant.io/#brand/logo))
+als je dit verder wilt verspreiden.
+
 ## Bekende beperkingen
 
+- Pushmeldingen bij een HA-wijziging komen met een vertraging van maximaal
+  de pollinterval van de achtergrondcontrole (standaard 20 seconden) — geen
+  live/instant-push, maar wel volledig automatisch en zonder dat de app
+  open hoeft te staan.
 - Bij een conflict (hetzelfde item op twee toestellen gewijzigd terwijl
   beide een tijd offline waren) is er geen "slimme" merge — de laatst
   binnenkomende wijziging wint, net als bij de Russisch Leren-app. Voor

@@ -1,6 +1,7 @@
 import api from './api.js';
 import * as storage from './storage.js';
 import * as sync from './sync.js';
+import * as push from './push.js';
 
 const appEl = document.getElementById('app');
 const statusEl = document.getElementById('statusbar');
@@ -131,6 +132,41 @@ function renderOverview() {
     if (!name) return;
     sync.mutateAndSync(() => storage.addListLocal(name));
     input.value = '';
+  });
+
+  renderPushBanner();
+}
+
+function renderPushBanner() {
+  if (viaIngress || !push.isSupported()) return;
+  const permission = push.getPermissionState();
+  if (permission === 'granted') return;
+
+  const banner = el(`
+    <div class="card">
+      <div style="margin-bottom:10px;">
+        🔔 Zet meldingen aan om te zien wanneer een lijstje vanuit Home
+        Assistant wordt gewijzigd — ook als je de app niet open hebt staan.
+      </div>
+      <button class="secondary" id="enable-push-btn">Meldingen aanzetten</button>
+    </div>
+  `);
+  appEl.appendChild(banner);
+
+  document.getElementById('enable-push-btn').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Bezig…';
+    const ok = await push.enablePush();
+    if (ok) {
+      render();
+    } else {
+      e.target.disabled = false;
+      e.target.textContent = 'Meldingen aanzetten';
+      banner.querySelector('div').insertAdjacentHTML(
+        'beforeend',
+        '<br /><span style="color:var(--danger);">Toestemming geweigerd of niet beschikbaar — je kunt dit later alsnog aanzetten via de browserinstellingen van dit toestel.</span>'
+      );
+    }
   });
 }
 
@@ -352,6 +388,13 @@ async function checkStatusAndStart() {
     sync.onChange(render);
     sync.onStatus(renderStatus);
     sync.init();
+
+    // Toestemming was al eerder gegeven (bv. na een herinstallatie van de
+    // app): stil opnieuw abonneren, zonder dat de gebruiker iets hoeft te
+    // klikken -- de browser vraagt hier niet opnieuw om toestemming.
+    if (!viaIngress && push.isSupported() && push.getPermissionState() === 'granted') {
+      push.enablePush().catch(() => {});
+    }
   }
   render();
 }

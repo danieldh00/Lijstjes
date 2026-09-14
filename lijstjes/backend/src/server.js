@@ -6,6 +6,9 @@ const { requireAccess } = require('./middleware');
 const authRoutes = require('./routes/auth');
 const contentRoutes = require('./routes/content');
 const syncRoutes = require('./routes/sync');
+const pushRoutes = require('./routes/push');
+const { startWatcher } = require('./watcher');
+const { getRecentActorDeviceIds } = require('./recentActors');
 
 const app = express();
 const PORT = process.env.PORT || 3100;
@@ -18,6 +21,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/content', requireAccess, contentRoutes);
 app.use('/api/sync', requireAccess, syncRoutes);
+app.use('/api/push', requireAccess, pushRoutes);
 
 app.use(express.static(FRONTEND_DIR));
 
@@ -35,4 +39,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Lijstjes luistert op poort ${PORT}`);
+  startWatcher(getRecentActorDeviceIds);
 });

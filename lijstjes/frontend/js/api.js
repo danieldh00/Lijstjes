@@ -20,6 +20,8 @@ const api = {
   pair: (haUrl, token) => request('/api/auth/pair', { method: 'POST', body: { ha_url: haUrl, token } }),
   content: () => request('/api/content'),
   sync: (mutations) => request('/api/sync', { method: 'POST', body: { mutations } }),
+  pushVapidKey: () => request('/api/push/vapid-public-key'),
+  pushSubscribe: (subscription) => request('/api/push/subscribe', { method: 'POST', body: { subscription } }),
 };
 
 export default api;

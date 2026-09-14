@@ -43,6 +43,29 @@ supermarkt zonder bereik: je boodschappenlijst blijft gewoon bruikbaar.
 moet de inhoud ergens vandaan halen); daarna werkt dat toestel altijd
 offline totdat er weer verbinding is om te synchroniseren.
 
+## Pushmeldingen bij wijzigingen vanuit Home Assistant
+
+Een wijziging die rechtstreeks in Home Assistant wordt gemaakt — via het
+dashboard, Assist/voice, of een automatisering — komt ook als pushmelding
+binnen op je gekoppelde toestellen, **zonder dat je de app hoeft te
+openen**. De add-on controleert op de achtergrond (elke 20 seconden, zolang
+de add-on draait) of er iets gewijzigd is en stuurt dan een melding met de
+lijstnaam en wat er veranderd is; een tik op de melding opent de app direct
+op dat lijstje. Het toestel waarop de wijziging zelf gemaakt is, krijgt daar
+geen dubbele melding over.
+
+Zet dit aan via de knop **"Meldingen aanzetten"** boven aan het
+lijstjes-overzicht (alleen zichtbaar op de directe poort-3100-route, niet in
+het ingress-paneel). Je browser vraagt daarna eenmalig om toestemming.
+
+- Op iPhone/iPad werkt dit alleen vanuit de **geïnstalleerde app**
+  (Safari → Delen → "Zet op beginscherm", iOS 16.4 of nieuwer) — precies
+  dezelfde beperking als bij de dagelijkse herinnering van Russisch Leren.
+- Vereist een `https://`-verbinding buiten je eigen netwerk (net als de
+  service worker) — binnen je eigen wifi werkt `http://` ook.
+- Zet je browser-meldingen voor deze site later uit, dan stopt de app
+  vanzelf met pushen naar dat toestel (de browser meldt dat aan de add-on).
+
 ## Installeren als app op iPhone/iPad
 
 Net als andere PWA's: open de directe URL (poort 3100, niet het
