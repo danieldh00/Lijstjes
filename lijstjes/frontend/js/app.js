@@ -293,8 +293,17 @@ function renderListDetail(entityId) {
   appEl.appendChild(settings.storesEnabled ? renderGroupedItems(entityId, open, stores) : renderItemList(entityId, open));
 
   if (done.length) {
-    appEl.appendChild(el(`<div class="section-title">Afgevinkt</div>`));
+    appEl.appendChild(el(`
+      <div class="section-title-row">
+        <span class="section-title">Afgevinkt</span>
+        <button type="button" class="link-btn" id="clear-completed-btn">Legen</button>
+      </div>
+    `));
     appEl.appendChild(renderItemList(entityId, done));
+    document.getElementById('clear-completed-btn').addEventListener('click', () => {
+      if (!confirm(`${done.length} afgevinkt item${done.length === 1 ? '' : 's'} verwijderen?`)) return;
+      sync.mutateAndSync(() => storage.clearCompletedLocal(entityId));
+    });
   }
 
   if (!items.length) {

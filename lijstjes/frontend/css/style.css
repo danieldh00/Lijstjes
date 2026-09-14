@@ -243,6 +243,23 @@ button.secondary {
   margin: 20px 0 6px;
 }
 
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 6px;
+}
+.section-title-row .section-title { margin: 0; }
+
+.link-btn {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+}
+
 .empty {
   color: var(--muted);
   text-align: center;

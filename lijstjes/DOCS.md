@@ -27,6 +27,9 @@ enige bron van waarheid.
   einddatum/omschrijving instellen — dit synchroniseert beide kanten op:
   wijzig je iets via Assist/voice, de HA-app of het dashboard, dan zie je dat
   ook in Lijstjes en omgekeerd.
+- Staan er afgevinkte items in een lijstje, dan verschijnt boven die sectie
+  een **Legen**-knop: met één tik (en een bevestiging) verwijder je alle
+  afgevinkte items tegelijk, ook in Home Assistant.
 - Een lijstje verwijderen (✕ op het overzicht, met bevestiging) verwijdert
   ook echt de onderliggende `local_todo`-integratie in Home Assistant, inclusief
   alle items erin — dit kun je niet ongedaan maken.

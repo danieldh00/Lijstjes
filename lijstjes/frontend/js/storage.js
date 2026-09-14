@@ -230,6 +230,15 @@ function removeItemLocal(entityId, uid) {
   queueMutation(mutation);
 }
 
+// Alle afgevinkte items in één keer weggooien ("Legen"-knop boven de
+// Afgevinkt-sectie) -- gewoon removeItemLocal herhaald, zodat elk item op
+// dezelfde manier (met clientItemId waar mogelijk) in de wachtrij komt.
+function clearCompletedLocal(entityId) {
+  const items = state.snapshot.items[entityId] || [];
+  const completed = items.filter((i) => i.status === 'completed');
+  for (const item of completed) removeItemLocal(entityId, item.uid);
+}
+
 function moveItemLocal(entityId, uid, direction) {
   const items = state.snapshot.items[entityId] || [];
   const idx = items.findIndex((i) => i.uid === uid);
@@ -348,6 +357,7 @@ export {
   addItemLocal,
   updateItemLocal,
   removeItemLocal,
+  clearCompletedLocal,
   moveItemLocal,
   applySyncResult,
   replaceSnapshot,

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+- "Legen"-knop boven de Afgevinkt-sectie van een lijstje: met één tik (en
+  een bevestiging) alle afgevinkte items in één keer verwijderen, zowel
+  lokaal als in Home Assistant.
+
 ## 0.7.0
 
 - Lijstjes verwijderen en herordenen vanaf het overzicht: elke lijst-rij
