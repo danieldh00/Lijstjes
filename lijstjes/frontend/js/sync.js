@@ -86,6 +86,18 @@ async function refreshStores() {
   }
 }
 
+// Welke lijstjes Sjablonen/Winkels tonen -- zelfde behandeling: los ophalen
+// en cachen, geen Home Assistant-data.
+async function refreshListSettings() {
+  try {
+    const settings = await api.listSettings();
+    storage.setAllListSettingsCache(settings);
+    notify();
+  } catch (err) {
+    // stil falen -- geen netwerk
+  }
+}
+
 async function init() {
   // Voordat we ook maar iets over het netwerk proberen: is er een snapshot
   // die de service worker op de achtergrond heeft opgehaald (via een
@@ -130,6 +142,7 @@ async function init() {
   flush();
   refreshTemplates();
   refreshStores();
+  refreshListSettings();
 }
 
 function mutateAndSync(mutateFn) {
@@ -139,4 +152,4 @@ function mutateAndSync(mutateFn) {
   return result;
 }
 
-export { init, onChange, onStatus, flush, mutateAndSync, refreshTemplates, refreshStores };
+export { init, onChange, onStatus, flush, mutateAndSync, refreshTemplates, refreshStores, refreshListSettings };

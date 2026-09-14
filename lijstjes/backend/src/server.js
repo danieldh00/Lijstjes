@@ -11,6 +11,7 @@ const syncRoutes = require('./routes/sync');
 const pushRoutes = require('./routes/push');
 const templatesRoutes = require('./routes/templates');
 const storesRoutes = require('./routes/stores');
+const listSettingsRoutes = require('./routes/listSettings');
 const { startWatcher } = require('./watcher');
 const { getRecentActorDeviceIds } = require('./recentActors');
 
@@ -28,6 +29,7 @@ app.use('/api/sync', requireAccess, syncRoutes);
 app.use('/api/push', requireAccess, pushRoutes);
 app.use('/api/templates', requireAccess, templatesRoutes);
 app.use('/api/stores', requireAccess, storesRoutes);
+app.use('/api/list-settings', requireAccess, listSettingsRoutes);
 
 // Hashing de app-shell-bestanden bij het opstarten geeft de service worker
 // een automatisch, aan de inhoud gekoppeld cache-versienummer -- zo dwingt

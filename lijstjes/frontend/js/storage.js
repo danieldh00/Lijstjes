@@ -7,6 +7,7 @@ const SNAPSHOT_KEY = 'lijstjes:snapshot';
 const OUTBOX_KEY = 'lijstjes:outbox';
 const TEMPLATES_KEY = 'lijstjes:templates';
 const STORES_KEY = 'lijstjes:stores';
+const LIST_SETTINGS_KEY = 'lijstjes:list-settings';
 
 // Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
 // pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
@@ -46,6 +47,7 @@ const state = {
   outbox: readJSON(OUTBOX_KEY, []),
   templates: readJSON(TEMPLATES_KEY, []),
   stores: readJSON(STORES_KEY, []),
+  listSettings: readJSON(LIST_SETTINGS_KEY, {}),
 };
 
 function persist() {
@@ -79,6 +81,23 @@ function getStores(entityId) {
 function setStoresCache(stores) {
   state.stores = stores;
   writeJSON(STORES_KEY, state.stores);
+}
+
+// Per lijst: staan Sjablonen/Winkels aan? Niet elk lijstje (bv. Klussen)
+// heeft daar iets aan -- default uit, tenzij er al sjablonen/winkels voor
+// bestaan (de server bepaalt dat, zie backend/src/listSettings.js).
+function getListSettings(entityId) {
+  return state.listSettings[entityId] || { templatesEnabled: false, storesEnabled: false };
+}
+
+function setAllListSettingsCache(settings) {
+  state.listSettings = settings;
+  writeJSON(LIST_SETTINGS_KEY, state.listSettings);
+}
+
+function setListSettingsCache(entityId, settings) {
+  state.listSettings = { ...state.listSettings, [entityId]: settings };
+  writeJSON(LIST_SETTINGS_KEY, state.listSettings);
 }
 
 function getOutboxSize() {
@@ -294,6 +313,9 @@ export {
   setTemplatesCache,
   getStores,
   setStoresCache,
+  getListSettings,
+  setAllListSettingsCache,
+  setListSettingsCache,
   findList,
   findItem,
 };

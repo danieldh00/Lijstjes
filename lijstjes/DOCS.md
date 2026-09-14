@@ -28,6 +28,15 @@ enige bron van waarheid.
   wijzig je iets via Assist/voice, de HA-app of het dashboard, dan zie je dat
   ook in Lijstjes en omgekeerd.
 
+## Sjablonen en winkels aanzetten per lijstje
+
+Niet elk lijstje heeft hier iets aan — bij Klussen wil je geen "Snel
+toevoegen" of winkel-indeling zien. Daarom staan Sjablonen en Winkels per
+lijstje aan of uit, in te stellen via het ⚙-icoontje boven aan een lijstje.
+Standaard staan ze uit, **behalve** als je er al sjablonen/winkels voor had
+aangemaakt vóór deze instelling bestond — dan blijft dat gewoon zichtbaar
+zonder dat je iets hoeft te doen.
+
 ## Sjablonen: snel meerdere items in één keer toevoegen
 
 Onder "Snel toevoegen" bij elk lijstje kun je een sjabloon opslaan: een naam

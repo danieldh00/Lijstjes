@@ -28,6 +28,8 @@ const api = {
   stores: () => request('/api/stores'),
   createStore: (data) => request('/api/stores', { method: 'POST', body: data }),
   deleteStore: (id) => request(`/api/stores/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  listSettings: () => request('/api/list-settings'),
+  setListSettings: (data) => request('/api/list-settings', { method: 'POST', body: data }),
 };
 
 export default api;

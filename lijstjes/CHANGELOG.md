@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- Sjablonen en Winkels staan nu per lijstje aan of uit (⚙-icoontje boven
+  aan een lijstje) — niet elk lijstje (bv. Klussen) heeft er iets aan.
+  Standaard uit, behalve voor een lijstje waar je die al voor gebruikte
+  vóórdat deze instelling bestond: dat blijft gewoon zichtbaar zonder dat
+  je iets hoeft te doen.
+
 ## 0.5.2
 
 - Stijlfix: de winkel-dropdown (bij een item toevoegen en bewerken) gebruikte

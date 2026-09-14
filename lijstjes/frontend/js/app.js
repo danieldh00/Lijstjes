@@ -208,6 +208,7 @@ function renderListDetail(entityId) {
   const snapshot = storage.getSnapshot();
   const list = storage.findList(entityId);
   const items = snapshot.items[entityId] || [];
+  const settings = storage.getListSettings(entityId);
   appEl.innerHTML = '';
 
   appEl.appendChild(
@@ -215,14 +216,14 @@ function renderListDetail(entityId) {
     <div class="topbar">
       <a class="back" href="#/">‹ Lijstjes</a>
       <h1>${escapeHtml(list ? list.name : 'Lijstje')}</h1>
-      <span></span>
+      <a class="back" href="#/list/${encodeURIComponent(entityId)}/settings" title="Instellingen">⚙</a>
     </div>
   `)
   );
 
-  renderStoreManagement(entityId);
+  if (settings.storesEnabled) renderStoreManagement(entityId);
 
-  const stores = storage.getStores(entityId);
+  const stores = settings.storesEnabled ? storage.getStores(entityId) : [];
   const addForm = el(`
     <form class="add-form" id="add-item-form">
       <input type="text" id="new-item-summary" placeholder="Item toevoegen…" required />
@@ -237,12 +238,12 @@ function renderListDetail(entityId) {
   `);
   appEl.appendChild(addForm);
 
-  renderTemplates(entityId);
+  if (settings.templatesEnabled) renderTemplates(entityId);
 
   const open = items.filter((i) => i.status !== 'completed');
   const done = items.filter((i) => i.status === 'completed');
 
-  appEl.appendChild(renderGroupedItems(entityId, open, stores));
+  appEl.appendChild(settings.storesEnabled ? renderGroupedItems(entityId, open, stores) : renderItemList(entityId, open));
 
   if (done.length) {
     appEl.appendChild(el(`<div class="section-title">Afgevinkt</div>`));
@@ -517,6 +518,63 @@ Ui" required></textarea>
   });
 }
 
+// ---------- Lijst-instellingen ----------
+
+function renderListSettings(entityId) {
+  const list = storage.findList(entityId);
+  const settings = storage.getListSettings(entityId);
+  appEl.innerHTML = '';
+
+  appEl.appendChild(
+    el(`
+    <div class="topbar">
+      <a class="back" href="#/list/${encodeURIComponent(entityId)}">‹ Terug</a>
+      <h1>Instellingen</h1>
+      <span></span>
+    </div>
+  `)
+  );
+
+  const form = el(`
+    <form class="item-form" id="list-settings-form">
+      <p style="margin:0 0 4px;color:var(--muted);font-size:13.5px;">
+        Voor ${escapeHtml(list ? list.name : 'dit lijstje')}. Niet elk lijstje heeft dit nodig — zet
+        alleen aan wat je hier wilt gebruiken.
+      </p>
+      <label class="toggle-row">
+        <input type="checkbox" id="settings-templates" ${settings.templatesEnabled ? 'checked' : ''} />
+        <span>Sjablonen — snel meerdere items in één keer toevoegen (bv. een maaltijd)</span>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="settings-stores" ${settings.storesEnabled ? 'checked' : ''} />
+        <span>Winkels — items groeperen op waar je ze moet halen</span>
+      </label>
+      <div class="row">
+        <button class="primary" type="submit">Opslaan</button>
+      </div>
+    </form>
+  `);
+  appEl.appendChild(form);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const templatesEnabled = document.getElementById('settings-templates').checked;
+    const storesEnabled = document.getElementById('settings-stores').checked;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Bezig…';
+    try {
+      const saved = await api.setListSettings({ entity_id: entityId, templatesEnabled, storesEnabled });
+      storage.setListSettingsCache(entityId, saved);
+      location.hash = `#/list/${encodeURIComponent(entityId)}`;
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Opslaan';
+      alert(`Kon instellingen niet opslaan: ${err.message}`);
+    }
+  });
+}
+
 // ---------- Item bewerken ----------
 
 function renderItemEdit(entityId, uid) {
@@ -539,7 +597,8 @@ function renderItemEdit(entityId, uid) {
 
   const dueDateValue = item.due_date || (item.due_datetime ? item.due_datetime.slice(0, 10) : '');
   const { store: currentStore, note: currentNote } = parseItemMeta(item.description);
-  const stores = storage.getStores(entityId);
+  const settings = storage.getListSettings(entityId);
+  const stores = settings.storesEnabled ? storage.getStores(entityId) : [];
 
   const form = el(`
     <form class="item-form" id="item-edit-form">
@@ -610,12 +669,15 @@ function render() {
   const hash = location.hash || '#/';
   const itemMatch = hash.match(/^#\/list\/([^/]+)\/item\/([^/]+)$/);
   const newTemplateMatch = hash.match(/^#\/list\/([^/]+)\/new-template$/);
+  const settingsMatch = hash.match(/^#\/list\/([^/]+)\/settings$/);
   const listMatch = hash.match(/^#\/list\/([^/]+)$/);
 
   if (itemMatch) {
     renderItemEdit(decodeURIComponent(itemMatch[1]), decodeURIComponent(itemMatch[2]));
   } else if (newTemplateMatch) {
     renderTemplateNew(decodeURIComponent(newTemplateMatch[1]));
+  } else if (settingsMatch) {
+    renderListSettings(decodeURIComponent(settingsMatch[1]));
   } else if (listMatch) {
     renderListDetail(decodeURIComponent(listMatch[1]));
   } else {
