@@ -205,6 +205,8 @@ function renderListDetail(entityId) {
   `);
   appEl.appendChild(addForm);
 
+  renderTemplates(entityId);
+
   const open = items.filter((i) => i.status !== 'completed');
   const done = items.filter((i) => i.status === 'completed');
 
@@ -281,6 +283,120 @@ function bindItemActions(entityId) {
     row.querySelector('[data-action="move-down"]').addEventListener('click', () =>
       sync.mutateAndSync(() => storage.moveItemLocal(entityId, uid, 1))
     );
+  });
+}
+
+// ---------- Sjablonen (snel meerdere items tegelijk toevoegen) ----------
+
+function renderTemplates(entityId) {
+  const templates = storage.getTemplates(entityId);
+
+  appEl.appendChild(el(`<div class="section-title">Snel toevoegen</div>`));
+  const row = el(`<div class="template-chips"></div>`);
+  appEl.appendChild(row);
+
+  for (const tpl of templates) {
+    const chip = el(`
+      <span class="template-chip">
+        <button type="button" class="chip-apply" data-id="${escapeHtml(tpl.id)}">${escapeHtml(tpl.name)}</button>
+        <button type="button" class="chip-delete" data-id="${escapeHtml(tpl.id)}" title="Sjabloon verwijderen">✕</button>
+      </span>
+    `);
+    row.appendChild(chip);
+  }
+  row.appendChild(el(`<button type="button" class="chip-new" id="new-template-btn">+ Sjabloon</button>`));
+
+  row.querySelectorAll('.chip-apply').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tpl = templates.find((t) => t.id === btn.dataset.id);
+      if (!tpl) return;
+      sync.mutateAndSync(() => {
+        for (const summary of tpl.items) storage.addItemLocal(entityId, { summary });
+      });
+    });
+  });
+
+  row.querySelectorAll('.chip-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const tpl = templates.find((t) => t.id === btn.dataset.id);
+      if (!tpl || !confirm(`Sjabloon "${tpl.name}" verwijderen?`)) return;
+      try {
+        await api.deleteTemplate(tpl.id);
+        await sync.refreshTemplates();
+      } catch (err) {
+        alert(`Kon sjabloon niet verwijderen: ${err.message}`);
+      }
+    });
+  });
+
+  document.getElementById('new-template-btn').addEventListener('click', () => {
+    location.hash = `#/list/${encodeURIComponent(entityId)}/new-template`;
+  });
+}
+
+function renderTemplateNew(entityId) {
+  const list = storage.findList(entityId);
+  appEl.innerHTML = '';
+
+  appEl.appendChild(
+    el(`
+    <div class="topbar">
+      <a class="back" href="#/list/${encodeURIComponent(entityId)}">‹ Terug</a>
+      <h1>Nieuw sjabloon</h1>
+      <span></span>
+    </div>
+  `)
+  );
+
+  const form = el(`
+    <form class="item-form" id="template-form">
+      <p style="margin:0 0 4px;color:var(--muted);font-size:13.5px;">
+        Voor ${escapeHtml(list ? list.name : 'dit lijstje')}. Bv. een maaltijd
+        ("Pasta-avond") of iets dat je vaak in één keer toevoegt.
+      </p>
+      <label for="tpl-name">Naam</label>
+      <input id="tpl-name" type="text" placeholder="Bv. Pasta-avond" required />
+
+      <label for="tpl-items">Items (één per regel)</label>
+      <textarea id="tpl-items" rows="6" placeholder="Spaghetti
+Gehakt
+Tomatenblokjes
+Ui" required></textarea>
+
+      <div class="row">
+        <button class="primary" type="submit">Opslaan</button>
+        <button class="secondary" type="button" id="cancel-template">Annuleren</button>
+      </div>
+    </form>
+  `);
+  appEl.appendChild(form);
+
+  document.getElementById('cancel-template').addEventListener('click', () => {
+    location.hash = `#/list/${encodeURIComponent(entityId)}`;
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('tpl-name').value.trim();
+    const items = document
+      .getElementById('tpl-items')
+      .value.split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!name || !items.length) return;
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Bezig…';
+    try {
+      await api.createTemplate({ name, entity_id: entityId, items });
+      await sync.refreshTemplates();
+      location.hash = `#/list/${encodeURIComponent(entityId)}`;
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Opslaan';
+      alert(`Kon sjabloon niet opslaan: ${err.message}`);
+    }
   });
 }
 
@@ -364,10 +480,13 @@ function render() {
 
   const hash = location.hash || '#/';
   const itemMatch = hash.match(/^#\/list\/([^/]+)\/item\/([^/]+)$/);
+  const newTemplateMatch = hash.match(/^#\/list\/([^/]+)\/new-template$/);
   const listMatch = hash.match(/^#\/list\/([^/]+)$/);
 
   if (itemMatch) {
     renderItemEdit(decodeURIComponent(itemMatch[1]), decodeURIComponent(itemMatch[2]));
+  } else if (newTemplateMatch) {
+    renderTemplateNew(decodeURIComponent(newTemplateMatch[1]));
   } else if (listMatch) {
     renderListDetail(decodeURIComponent(listMatch[1]));
   } else {

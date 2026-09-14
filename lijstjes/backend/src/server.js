@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const contentRoutes = require('./routes/content');
 const syncRoutes = require('./routes/sync');
 const pushRoutes = require('./routes/push');
+const templatesRoutes = require('./routes/templates');
 const { startWatcher } = require('./watcher');
 const { getRecentActorDeviceIds } = require('./recentActors');
 
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/content', requireAccess, contentRoutes);
 app.use('/api/sync', requireAccess, syncRoutes);
 app.use('/api/push', requireAccess, pushRoutes);
+app.use('/api/templates', requireAccess, templatesRoutes);
 
 app.use(express.static(FRONTEND_DIR));
 

@@ -18,6 +18,10 @@ apart account-systeem.
   app).
 - **Items**: toevoegen, afvinken, verwijderen, herordenen (↑/↓), en
   optioneel een omschrijving en een einddatum instellen.
+- **Sjablonen**: per lijstje bewaarde presets ("Pasta-avond", "Ontbijt",
+  of gewoon een vaak terugkerend los item) die met één tik alle items in
+  één keer toevoegen — werkt ook offline. Eigen concept van de app, staat
+  niet in Home Assistant zelf.
 - **Geen accounts**: in plaats van een eigen inlogsysteem koppel je de app
   eenmalig aan Home Assistant met een **Long-Lived Access Token** — dat ene
   token *is* de koppeling, er is niets anders te beheren.
@@ -71,11 +75,13 @@ lijstjes/
       push.js                     VAPID-sleutels + push-abonnementen + meldingen versturen
       watcher.js                   Achtergrondpoller: detecteert wijzigingen vanuit HA, triggert pushmeldingen
       recentActors.js               Onthoudt welk toestel net zelf iets wijzigde (geen dubbele melding)
+      templates.js                  Sjablonen (eigen concept, niet in HA): opslaan/lezen in /data
       routes/
         auth.js                     Pairing-status + koppelen met een Long-Lived Access Token
         content.js                   Volledige snapshot voor de eerste (online) vulling
         sync.js                      Offline-wachtrij van mutaties verwerken (idempotent)
         push.js                       VAPID-sleutel opvragen + toestel (de)abonneren op pushmeldingen
+        templates.js                   Sjablonen aanmaken/opvragen/verwijderen
   frontend/
     index.html, css/               Opmaak
     js/

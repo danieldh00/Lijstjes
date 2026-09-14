@@ -5,6 +5,7 @@
 
 const SNAPSHOT_KEY = 'lijstjes:snapshot';
 const OUTBOX_KEY = 'lijstjes:outbox';
+const TEMPLATES_KEY = 'lijstjes:templates';
 
 // Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
 // pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
@@ -42,6 +43,7 @@ function writeJSON(key, value) {
 const state = {
   snapshot: readJSON(SNAPSHOT_KEY, { lists: [], items: {}, syncedAt: null }),
   outbox: readJSON(OUTBOX_KEY, []),
+  templates: readJSON(TEMPLATES_KEY, []),
 };
 
 function persist() {
@@ -51,6 +53,19 @@ function persist() {
 
 function getSnapshot() {
   return state.snapshot;
+}
+
+// Sjablonen (snel meerdere items in één keer toevoegen, bv. een maaltijd)
+// zijn geen Home Assistant-concept en leven dus niet in de snapshot/outbox
+// -- gewoon een los gecachet lijstje per lijst, aparte persist zodat een
+// mislukte schrijfactie van de een de ander niet raakt.
+function getTemplates(entityId) {
+  return state.templates.filter((t) => t.entity_id === entityId);
+}
+
+function setTemplatesCache(templates) {
+  state.templates = templates;
+  writeJSON(TEMPLATES_KEY, state.templates);
 }
 
 function getOutboxSize() {
@@ -262,6 +277,8 @@ export {
   applySyncResult,
   replaceSnapshot,
   adoptBackgroundSnapshot,
+  getTemplates,
+  setTemplatesCache,
   findList,
   findItem,
 };

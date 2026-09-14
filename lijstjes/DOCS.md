@@ -28,6 +28,18 @@ enige bron van waarheid.
   wijzig je iets via Assist/voice, de HA-app of het dashboard, dan zie je dat
   ook in Lijstjes en omgekeerd.
 
+## Sjablonen: snel meerdere items in één keer toevoegen
+
+Onder "Snel toevoegen" bij elk lijstje kun je een sjabloon opslaan: een naam
+plus een lijst van items, bijvoorbeeld een maaltijd ("Pasta-avond" →
+spaghetti, gehakt, tomatenblokjes, ui) of iets anders dat je vaak in één
+keer toevoegt. Een tik op het sjabloon voegt alle items er meteen bij —
+werkt ook offline, net als losse items toevoegen. Sjablonen horen bij één
+specifiek lijstje (aangemaakt vanuit dat lijstje) en zijn geen
+Home Assistant-concept: ze staan alleen in de eigen opslag van deze add-on,
+niet in HA zelf. Aanmaken en verwijderen van een sjabloon vereist wel
+online te zijn.
+
 ## Offline gebruik & synchronisatie
 
 De app is *local-first*: eenmaal geopend (via de directe poort-3100-route,

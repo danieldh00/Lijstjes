@@ -60,6 +60,20 @@ function scheduleFlush(delay = 400) {
   scheduleFlush._t = setTimeout(flush, delay);
 }
 
+// Sjablonen wijzigen zelden en zijn geen Home Assistant-data, dus die lopen
+// niet mee in de gewone outbox-flush -- gewoon los ophalen en cachen; lukt
+// dat niet (offline, nog niet eerder gesynchroniseerd), dan blijft de
+// laatst gecachete set gewoon staan.
+async function refreshTemplates() {
+  try {
+    const { templates } = await api.templates();
+    storage.setTemplatesCache(templates);
+    notify();
+  } catch (err) {
+    // stil falen -- geen netwerk, of nog geen sjablonen aangemaakt
+  }
+}
+
 async function init() {
   // Voordat we ook maar iets over het netwerk proberen: is er een snapshot
   // die de service worker op de achtergrond heeft opgehaald (via een
@@ -102,6 +116,7 @@ async function init() {
   window.addEventListener('focus', () => flush());
 
   flush();
+  refreshTemplates();
 }
 
 function mutateAndSync(mutateFn) {
@@ -111,4 +126,4 @@ function mutateAndSync(mutateFn) {
   return result;
 }
 
-export { init, onChange, onStatus, flush, mutateAndSync };
+export { init, onChange, onStatus, flush, mutateAndSync, refreshTemplates };

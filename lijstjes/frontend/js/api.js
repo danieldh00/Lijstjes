@@ -22,6 +22,9 @@ const api = {
   sync: (mutations) => request('/api/sync', { method: 'POST', body: { mutations } }),
   pushVapidKey: () => request('/api/push/vapid-public-key'),
   pushSubscribe: (subscription) => request('/api/push/subscribe', { method: 'POST', body: { subscription } }),
+  templates: () => request('/api/templates'),
+  createTemplate: (data) => request('/api/templates', { method: 'POST', body: data }),
+  deleteTemplate: (id) => request(`/api/templates/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
 
 export default api;

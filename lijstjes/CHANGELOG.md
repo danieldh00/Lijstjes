@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+- Sjablonen: per lijstje een naam plus items opslaan (bv. een maaltijd
+  als "Pasta-avond" → spaghetti, gehakt, ui, of een los vaak terugkerend
+  item) en met één tik in één keer toevoegen — te vinden onder "Snel
+  toevoegen" bovenaan elk lijstje. Werkt ook offline (het toevoegen zelf
+  loopt via dezelfde outbox als losse items); een sjabloon aanmaken of
+  verwijderen vereist online te zijn. Eigen concept van de app, niet van
+  Home Assistant, dus opgeslagen in de eigen opslag van de add-on.
+
 ## 0.3.0
 
 - Echte achtergrondverversing: tot nu toe kon de offline-kopie alleen
