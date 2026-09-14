@@ -69,6 +69,11 @@ self.addEventListener('push', (event) => {
     icon: 'icons/icon-192.png',
     badge: 'icons/icon-192.png',
     data: { entityId: data.entityId },
+    // Eén melding per lijstje: een volgende melding over hetzelfde lijstje
+    // vervangt de vorige in plaats van er een nieuwe naast te zetten. Met
+    // renotify uit gebeurt dat stil, zonder opnieuw te trillen/piepen.
+    tag: data.entityId || 'lijstjes',
+    renotify: false,
   };
   // Elke pushmelding is ook het enige moment waarop deze service worker mag
   // draaien terwijl de app zelf niet open staat -- dus dit is meteen de kans

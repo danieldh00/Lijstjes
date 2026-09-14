@@ -61,6 +61,22 @@ function getSnapshot() {
   return state.snapshot;
 }
 
+// Alles wat de views uit deze module tekenen, als één vergelijkbare string.
+// Hiermee kan de router goedkoop bepalen of een her-render überhaupt iets
+// aan het scherm zou veranderen. `syncedAt` zit er bewust niet in: die is bij
+// elke poll anders (ook als er inhoudelijk niets wijzigde) en zou daarmee na
+// elke achtergrondsync een volledige her-render forceren.
+function getStateSignature() {
+  return JSON.stringify({
+    lists: state.snapshot.lists,
+    items: state.snapshot.items,
+    templates: state.templates,
+    stores: state.stores,
+    listSettings: state.listSettings,
+    listOrder: state.listOrder,
+  });
+}
+
 // Sjablonen (snel meerdere items in één keer toevoegen, bv. een maaltijd)
 // zijn geen Home Assistant-concept en leven dus niet in de snapshot/outbox
 // -- gewoon een los gecachet lijstje per lijst, aparte persist zodat een
@@ -346,6 +362,7 @@ async function adoptBackgroundSnapshot() {
 
 export {
   getSnapshot,
+  getStateSignature,
   getOutboxSize,
   getOutbox,
   hasContent,

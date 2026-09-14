@@ -167,7 +167,8 @@ als je dit verder wilt verspreiden.
 - Pushmeldingen bij een HA-wijziging komen met een vertraging van maximaal
   de pollinterval van de achtergrondcontrole (standaard 20 seconden) — geen
   live/instant-push, maar wel volledig automatisch en zonder dat de app
-  open hoeft te staan.
+  open hoeft te staan. Een reeks wijzigingen die bij elkaar hoort levert één
+  melding per lijstje op (zie DOCS.md), geen melding per wijziging.
 - Bij een conflict (hetzelfde item op twee toestellen gewijzigd terwijl
   beide een tijd offline waren) is er geen "slimme" merge — de laatst
   binnenkomende wijziging wint, net als bij de Russisch Leren-app. Voor

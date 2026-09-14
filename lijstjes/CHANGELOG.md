@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.0
+
+- De achtergrondsynchronisatie werkt het scherm nu gericht bij in plaats van
+  het hele scherm opnieuw op te bouwen. Voorheen tekende elke poll (elke 15
+  seconden) en elke tabwissel alles opnieuw — ook als er niets gewijzigd
+  was — waardoor het voelde als een pagina die telkens herlaadt: de
+  scrollpositie sprong terug naar boven en half ingetypte tekst was weg. Nu
+  blijft de pagina onaangeroerd als er niets veranderd is, en blijven bij een
+  echte wijziging je scrollpositie en het invoerveld waarin je typt gewoon
+  staan.
+- Nog maar één pushmelding per lijstje in plaats van een hele reeks. Een
+  reeks wijzigingen die bij elkaar hoort (een heel lijstje in één keer vullen
+  vanuit de HA-app) gaf voorheen bij elke poll opnieuw een melding. Nu komt
+  er meteen één melding zodra de reeks begint, en wordt die aan het eind
+  stilletjes vervangen door de eindstand ("20 toegevoegd") in plaats van er
+  meldingen naast te zetten.
+
 ## 0.7.1
 
 - "Legen"-knop boven de Afgevinkt-sectie van een lijstje: met één tik (en

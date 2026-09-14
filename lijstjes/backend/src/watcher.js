@@ -51,15 +51,26 @@ function diffLists(prevSnapshot, nextSnapshot) {
   return changes;
 }
 
-function summarize(change) {
+function summarize(totals) {
   const parts = [];
-  if (change.added) parts.push(`${change.added} toegevoegd`);
-  if (change.completed) parts.push(`${change.completed} afgevinkt`);
-  if (change.reopened) parts.push(`${change.reopened} heropend`);
-  if (change.removed) parts.push(`${change.removed} verwijderd`);
-  if (change.edited) parts.push(`${change.edited} gewijzigd`);
+  if (totals.added) parts.push(`${totals.added} toegevoegd`);
+  if (totals.completed) parts.push(`${totals.completed} afgevinkt`);
+  if (totals.reopened) parts.push(`${totals.reopened} heropend`);
+  if (totals.removed) parts.push(`${totals.removed} verwijderd`);
+  if (totals.edited) parts.push(`${totals.edited} gewijzigd`);
   return parts.join(', ');
 }
+
+// Een reeks wijzigingen die bij elkaar hoort (een heel lijstje in één keer
+// vullen in de HA-app) levert anders bij élke poll opnieuw een melding op.
+// Daarom houden we per lijst een lopende reeks bij: bij de eerste poll met
+// wijzigingen gaat er meteen een melding uit (geen onnodige vertraging voor
+// de veelvoorkomende losse wijziging), daarna wordt er alleen nog opgeteld
+// totdat er een poll zonder wijzigingen langskomt -- dán gaat de eindstand er
+// als totaal uit. Samen met de `tag` per lijst in de service worker vervangt
+// die tweede melding de eerste, zodat je er altijd maar één in beeld hebt.
+const bursts = new Map();
+const COUNTERS = ['added', 'removed', 'completed', 'reopened', 'edited'];
 
 async function poll(getRecentActorDeviceIds) {
   if (!hasOperatingCredential()) return;
@@ -68,11 +79,31 @@ async function poll(getRecentActorDeviceIds) {
     if (lastKnown) {
       const changes = diffLists(lastKnown, snapshot);
       const excluded = getRecentActorDeviceIds();
+      const changedNow = new Set(changes.map((c) => c.entity_id));
+
       for (const change of changes) {
-        await sendNotificationToAll(
-          { title: change.name, body: summarize(change), entityId: change.entity_id },
-          excluded
-        );
+        let burst = bursts.get(change.entity_id);
+        if (!burst) {
+          burst = { totals: Object.fromEntries(COUNTERS.map((k) => [k, 0])), sentSummary: null };
+          bursts.set(change.entity_id, burst);
+        }
+        burst.name = change.name;
+        for (const key of COUNTERS) burst.totals[key] += change[key];
+      }
+
+      for (const [entityId, burst] of bursts) {
+        const summary = summarize(burst.totals);
+        if (changedNow.has(entityId)) {
+          // De reeks loopt nog; alleen de allereerste melding gaat nu uit.
+          if (burst.sentSummary !== null) continue;
+        } else if (summary === burst.sentSummary) {
+          // Reeks afgelopen en de eindstand is al gemeld.
+          bursts.delete(entityId);
+          continue;
+        }
+        await sendNotificationToAll({ title: burst.name, body: summary, entityId }, excluded);
+        burst.sentSummary = summary;
+        if (!changedNow.has(entityId)) bursts.delete(entityId);
       }
     }
     lastKnown = snapshot;

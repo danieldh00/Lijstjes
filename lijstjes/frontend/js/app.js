@@ -46,6 +46,9 @@ function renderStatus(status) {
 // ---------- Pairing ----------
 
 function renderPairing(error) {
+  // Wordt ook rechtstreeks aangeroepen (met een foutmelding) buiten de router
+  // om; de getekende DOM hoort dan bij geen enkele berekende signature meer.
+  lastSignature = null;
   appEl.innerHTML = '';
   appEl.appendChild(
     el(`
@@ -138,8 +141,10 @@ function renderOverview() {
     const input = document.getElementById('new-list-name');
     const name = input.value.trim();
     if (!name) return;
-    sync.mutateAndSync(() => storage.addListLocal(name));
+    // Leegmaken vóór de mutatie: die tekent direct opnieuw, en neemt daarbij
+    // de inhoud van het actieve invoerveld mee over.
     input.value = '';
+    sync.mutateAndSync(() => storage.addListLocal(name));
   });
 
   bindListActions(lists);
@@ -317,9 +322,11 @@ function renderListDetail(entityId) {
     if (!summary) return;
     const storeSelect = document.getElementById('new-item-store');
     const store = storeSelect ? storeSelect.value : '';
-    sync.mutateAndSync(() => storage.addItemLocal(entityId, { summary, description: buildDescription(store, '') }));
+    // Leegmaken vóór de mutatie: die tekent direct opnieuw, en neemt daarbij
+    // de inhoud van het actieve invoerveld mee over.
     input.value = '';
     if (storeSelect) storeSelect.value = '';
+    sync.mutateAndSync(() => storage.addItemLocal(entityId, { summary, description: buildDescription(store, '') }));
   });
 
   bindItemActions(entityId);
@@ -707,7 +714,74 @@ function renderItemEdit(entityId, uid) {
 
 // ---------- Router ----------
 
+// De achtergrondsync roept render() aan na élke poll (elke 15 seconden) en bij
+// elke tabwissel/terugkeer naar de app -- meestal zonder dat er inhoudelijk
+// iets gewijzigd is. Omdat render() de hele DOM weggooit en opnieuw opbouwt,
+// voelde dat als een pagina die telkens herlaadt: de scrollpositie sprong
+// terug naar boven en half ingetypte tekst was weg. Daarom nu twee dingen:
+// eerst kijken of het scherm er überhaupt anders uit zou komen te zien (zo
+// niet: de DOM volledig met rust laten), en als er wél iets wijzigt de
+// scrollpositie en het actieve invoerveld eroverheen bewaren.
+let lastSignature = null;
+
+function viewSignature() {
+  return JSON.stringify({
+    hash: location.hash || '#/',
+    paired,
+    viaIngress,
+    needsHaUrl,
+    online: navigator.onLine,
+    pushPermission: push.isSupported() ? push.getPermissionState() : 'unsupported',
+    state: storage.getStateSignature(),
+  });
+}
+
+function captureUiState() {
+  const active = document.activeElement;
+  const focus =
+    active && active.id && appEl.contains(active)
+      ? {
+          id: active.id,
+          value: 'value' in active ? active.value : undefined,
+          start: active.selectionStart,
+          end: active.selectionEnd,
+        }
+      : null;
+  return { scrollY: window.scrollY, focus };
+}
+
+function restoreUiState(ui) {
+  if (ui.focus) {
+    const next = document.getElementById(ui.focus.id);
+    if (next) {
+      // Wat er stond is wat de gebruiker zelf aan het typen was -- dat wint
+      // van de opnieuw opgebouwde (lege) waarde.
+      if (ui.focus.value !== undefined && 'value' in next) next.value = ui.focus.value;
+      next.focus({ preventScroll: true });
+      if (ui.focus.start != null && next.setSelectionRange) {
+        // Niet elk invoertype ondersteunt een selectiebereik (date e.d.).
+        try {
+          next.setSelectionRange(ui.focus.start, ui.focus.end);
+        } catch (err) {
+          /* niet van belang */
+        }
+      }
+    }
+  }
+  if (window.scrollY !== ui.scrollY) window.scrollTo({ top: ui.scrollY });
+}
+
 function render() {
+  const signature = viewSignature();
+  if (signature === lastSignature) return;
+  lastSignature = signature;
+
+  const ui = captureUiState();
+  renderView();
+  restoreUiState(ui);
+}
+
+function renderView() {
   if (!paired && !viaIngress) {
     renderPairing();
     return;

@@ -112,6 +112,13 @@ lijstnaam en wat er veranderd is; een tik op de melding opent de app direct
 op dat lijstje. Het toestel waarop de wijziging zelf gemaakt is, krijgt daar
 geen dubbele melding over.
 
+Je krijgt hooguit **één melding per lijstje**, ook als je in één keer een hele
+boodschappenlijst vult. Zodra een reeks wijzigingen begint gaat er meteen een
+melding uit (zodat een losse wijziging niet onnodig blijft liggen); loopt die
+reeks door, dan wordt er alleen nog opgeteld, en zodra het rustig is vervangt
+de eindstand ("20 toegevoegd") stilletjes die eerste melding in plaats van er
+een nieuwe naast te zetten.
+
 Dit is meteen ook de enige manier waarop een webapp data mag ophalen
 terwijl hij niet open staat: elke pushmelding is voor de service worker op
 je toestel de kans om de offline-kopie op de achtergrond te verversen (zie
