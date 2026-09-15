@@ -107,6 +107,16 @@ in, ook al heb je de app zelf niet geopend sinds de wijziging. Zonder
 meldingen aan blijft de offline-kopie op de stand van de laatste keer dat je
 de app zelf open had staan.
 
+**Bijwerken naar een nieuwe versie van de app zelf.** Een webapp op je
+beginscherm wordt bij het openen meestal *hervat* in plaats van opnieuw
+geladen. Er is dan geen navigatie, dus de browser merkt uit zichzelf niet dat
+er een nieuwe versie klaarstaat — en zonder adresbalk kun je ook niet even
+verversen. Daarom controleert de app dat nu zelf elke keer dat hij in beeld
+komt, en herlaadt hij zichzelf zodra er een nieuwe versie klaarstaat. Je
+hoeft dus niets te doen: hooguit zie je bij het openen heel even de oude
+weergave voordat hij omklapt. Al je lijstjes en wachtende wijzigingen staan
+lokaal opgeslagen en blijven bij zo'n herlaad gewoon staan.
+
 ## Pushmeldingen bij wijzigingen vanuit Home Assistant
 
 Een wijziging die rechtstreeks in Home Assistant wordt gemaakt — via het

@@ -873,11 +873,67 @@ async function checkStatusAndStart() {
 window.addEventListener('hashchange', render);
 checkStatusAndStart();
 
+// ---------- App-updates ophalen ----------
+//
+// Een geïnstalleerde PWA (zeker op iOS) wordt bij het openen meestal *hervat*
+// en niet opnieuw geladen: er is dan geen navigatie, dus de browser haalt
+// sw.js niet opnieuw op en merkt een nieuwe versie niet op. En ook als er wel
+// een nieuwe service worker actief wordt, blijft de al geladen JS/CSS van de
+// oude versie gewoon draaien tot de pagina herlaadt -- in een geïnstalleerde
+// webapp is er geen adresbalk om dat zelf te doen. In een Safari-tab gebeurt
+// allebei vanzelf (een tab navigeert en ververst regelmatig), waardoor de site
+// daar wél bijwerkte en de webapp op een oude versie bleef hangen.
+//
+// Daarom hier expliciet: bij elke keer dat de app weer in beeld komt op een
+// nieuwe versie controleren, en de pagina herladen zodra een nieuwe service
+// worker het overneemt. Alle app-data staat in localStorage, dus zo'n herlaad
+// kost niets.
 if ('serviceWorker' in navigator) {
+  // Werd deze pagina al door een service worker bestuurd? Zo niet, dan is de
+  // eerstvolgende wissel gewoon de allereerste installatie die deze pagina
+  // overneemt -- dat is geen update en hoeft niet te herladen. Wél de vlag
+  // bijwerken, want elke wissel dáárna is wel degelijk een nieuwe versie.
+  let hasController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hasController) {
+      hasController = true;
+      return;
+    }
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
+  // pageshow, focus en visibilitychange gaan bij één keer hervatten alle drie
+  // vlak na elkaar af; deze drempel bundelt die tot één controle. Hij moet
+  // kort blijven: elke échte hervatting hoort te controleren, ook als je de
+  // app even wegklikt en meteen weer opent.
+  let lastCheck = 0;
+  function checkForUpdate() {
+    if (Date.now() - lastCheck < 3000) return;
+    lastCheck = Date.now();
+    navigator.serviceWorker
+      .getRegistration()
+      .then((registration) => registration && registration.update())
+      .catch(() => {
+        // Geen netwerk -- de volgende keer dat de app in beeld komt opnieuw.
+      });
+  }
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {
       // Geen secure context (plain http op een niet-localhost-adres) --
       // de app werkt gewoon door, alleen zonder shell-caching.
     });
+  });
+
+  // Zelfde drietal als bij de datasynchronisatie in sync.js: op iOS is er niet
+  // één gebeurtenis die bij het hervatten betrouwbaar afgaat.
+  window.addEventListener('pageshow', checkForUpdate);
+  window.addEventListener('focus', checkForUpdate);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForUpdate();
   });
 }

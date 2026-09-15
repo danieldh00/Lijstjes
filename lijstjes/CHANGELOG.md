@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.1
+
+- De geïnstalleerde webapp bleef op een oude versie hangen terwijl dezelfde
+  site in Safari wél bijwerkte. Oorzaak: een webapp op het beginscherm wordt
+  bij het openen meestal *hervat* in plaats van opnieuw geladen. Zonder
+  navigatie haalt de browser `sw.js` niet opnieuw op, dus een nieuwe versie
+  werd niet eens opgemerkt — en ook als dat wel gebeurde, bleef de al
+  geladen JS/CSS draaien tot de pagina herlaadde, wat in een webapp zonder
+  adresbalk niet zelf te doen is. In een Safari-tab gebeurt allebei vanzelf.
+- De app controleert nu bij elke keer dat hij in beeld komt op een nieuwe
+  versie, en herlaadt zichzelf zodra die klaarstaat. Alle gegevens staan
+  lokaal opgeslagen, dus daar gaat niets bij verloren.
+
 ## 0.9.0
 
 - Nieuw uiterlijk, in de stijl van Home Assistant zelf: dezelfde kleuren
