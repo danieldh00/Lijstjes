@@ -36,6 +36,11 @@ enige bron van waarheid.
   lijstjes — terwijl je de naam typt, zie je het icoon al meebewegen. Kent
   de app de naam niet, dan krijgt het lijstje een neutraal lijstpictogram
   met een vaste eigen kleur. Je hoeft dus nooit zelf een icoon te kiezen.
+- De naam van een lijstje aanpassen kan via het ⚙-icoontje boven aan dat
+  lijstje. De nieuwe naam wordt ook in Home Assistant zelf doorgevoerd (zowel
+  de integratie als de entiteit), en het icoon past zich automatisch aan. Je
+  items blijven staan en het entity_id verandert niet, dus automatiseringen
+  die naar die lijst verwijzen blijven werken.
 - Een lijstje verwijderen (✕ op het overzicht, met bevestiging) verwijdert
   ook echt de onderliggende `local_todo`-integratie in Home Assistant, inclusief
   alle items erin — dit kun je niet ongedaan maken.
@@ -112,10 +117,11 @@ beginscherm wordt bij het openen meestal *hervat* in plaats van opnieuw
 geladen. Er is dan geen navigatie, dus de browser merkt uit zichzelf niet dat
 er een nieuwe versie klaarstaat — en zonder adresbalk kun je ook niet even
 verversen. Daarom controleert de app dat nu zelf elke keer dat hij in beeld
-komt, en herlaadt hij zichzelf zodra er een nieuwe versie klaarstaat. Je
-hoeft dus niets te doen: hooguit zie je bij het openen heel even de oude
-weergave voordat hij omklapt. Al je lijstjes en wachtende wijzigingen staan
-lokaal opgeslagen en blijven bij zo'n herlaad gewoon staan.
+komt. Staat er een nieuwe versie klaar, dan wordt die pas doorgevoerd op het
+moment dat je de app wegklikt — ongezien, zodat je nooit een verversing in
+beeld krijgt. De volgende keer dat je 'm opent draait de nieuwe versie. Al je
+lijstjes en wachtende wijzigingen staan lokaal opgeslagen en blijven daarbij
+gewoon staan.
 
 ## Pushmeldingen bij wijzigingen vanuit Home Assistant
 

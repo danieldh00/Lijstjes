@@ -631,9 +631,13 @@ function renderListSettings(entityId) {
 
   const form = el(`
     <form class="item-form" id="list-settings-form">
-      <p style="margin:0 0 4px;color:var(--muted);font-size:13.5px;">
-        Voor ${escapeHtml(list ? list.name : 'dit lijstje')}. Niet elk lijstje heeft dit nodig — zet
-        alleen aan wat je hier wilt gebruiken.
+      <label for="settings-name">Naam van het lijstje</label>
+      <input type="text" id="settings-name" value="${escapeHtml(list ? list.name : '')}" required />
+      <p style="margin:6px 0 4px;color:var(--muted);font-size:13.5px;">
+        De naam wordt ook in Home Assistant zelf aangepast. Het icoon volgt de nieuwe naam.
+      </p>
+      <p style="margin:14px 0 4px;color:var(--muted);font-size:13.5px;">
+        Niet elk lijstje heeft het onderstaande nodig — zet alleen aan wat je hier wilt gebruiken.
       </p>
       <label class="toggle-row">
         <input type="checkbox" id="settings-templates" ${settings.templatesEnabled ? 'checked' : ''} />
@@ -654,12 +658,16 @@ function renderListSettings(entityId) {
     e.preventDefault();
     const templatesEnabled = document.getElementById('settings-templates').checked;
     const storesEnabled = document.getElementById('settings-stores').checked;
+    const naam = document.getElementById('settings-name').value.trim();
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Bezig…';
     try {
       const saved = await api.setListSettings({ entity_id: entityId, templatesEnabled, storesEnabled });
       storage.setListSettingsCache(entityId, saved);
+      // De naam loopt wél via de gewone wachtrij, zodat hernoemen net als elke
+      // andere wijziging offline gewoon werkt en later vanzelf doorkomt.
+      if (naam) sync.mutateAndSync(() => storage.renameListLocal(entityId, naam));
       location.hash = `#/list/${encodeURIComponent(entityId)}`;
     } catch (err) {
       submitBtn.disabled = false;
@@ -895,25 +903,41 @@ checkStatusAndStart();
 //
 // Daarom hier expliciet: bij elke keer dat de app weer in beeld komt op een
 // nieuwe versie controleren, en de pagina herladen zodra een nieuwe service
-// worker het overneemt. Alle app-data staat in localStorage, dus zo'n herlaad
-// kost niets.
+// worker het overneemt.
+//
+// Dat herladen gebeurt bewust pas zodra de app uit beeld is. Meteen herladen
+// terwijl je ernaar kijkt geeft een zichtbare knipper, en dat is precies wat
+// een app niet hoort te doen. Door te wachten tot de app naar de achtergrond
+// gaat, gebeurt het ongezien en staat de nieuwe versie er klaar de volgende
+// keer dat je 'm opent. Alle gegevens staan in localStorage, dus er gaat bij
+// zo'n herlaad niets verloren.
 if ('serviceWorker' in navigator) {
   // Werd deze pagina al door een service worker bestuurd? Zo niet, dan is de
   // eerstvolgende wissel gewoon de allereerste installatie die deze pagina
   // overneemt -- dat is geen update en hoeft niet te herladen. Wél de vlag
   // bijwerken, want elke wissel dáárna is wel degelijk een nieuwe versie.
   let hasController = !!navigator.serviceWorker.controller;
+  let updateReady = false;
   let reloading = false;
+
+  function reloadWhenOutOfSight() {
+    if (!updateReady || reloading) return;
+    if (document.visibilityState !== 'hidden') return;
+    reloading = true;
+    window.location.reload();
+  }
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!hasController) {
       hasController = true;
       return;
     }
-    if (reloading) return;
-    reloading = true;
-    window.location.reload();
+    updateReady = true;
+    // Staat de app nu al op de achtergrond, dan kan het meteen.
+    reloadWhenOutOfSight();
   });
+
+  document.addEventListener('visibilitychange', reloadWhenOutOfSight);
 
   // pageshow, focus en visibilitychange gaan bij één keer hervatten alle drie
   // vlak na elkaar af; deze drempel bundelt die tot één controle. Hij moet

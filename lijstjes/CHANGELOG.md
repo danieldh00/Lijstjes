@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.10.0
+
+- Je kunt de naam van een lijstje aanpassen, via het ⚙-icoontje boven aan een
+  lijstje. De naam wordt ook in Home Assistant zelf aangepast (zowel de
+  integratie als de entiteit), en het icoon volgt automatisch de nieuwe naam.
+  Je items blijven gewoon staan. Hernoemen werkt net als elke andere
+  wijziging ook offline: het komt in de wachtrij en gaat vanzelf door zodra
+  er weer verbinding is.
+- Nooit meer een zichtbare verversing van de app. Een nieuwe versie werd tot
+  nu toe meteen geladen zodra die klaarstond, wat een korte knipper gaf
+  terwijl je ernaar keek. Dat gebeurt nu pas op het moment dat de app naar de
+  achtergrond gaat, zodat je het niet ziet en de nieuwe versie klaarstaat als
+  je 'm weer opent.
+
 ## 0.9.2
 
 - De synchronisatie gebeurt nu volledig onzichtbaar. De balk bovenin liet bij

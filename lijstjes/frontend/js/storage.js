@@ -156,6 +156,25 @@ function addListLocal(name) {
   return { tempId, mutation };
 }
 
+function renameListLocal(entityId, name) {
+  const list = findList(entityId);
+  if (!list || list.name === name) return;
+  list.name = name;
+  persist();
+  // Een lijst die nog niet in Home Assistant bestaat (het aanmaken staat nog
+  // in de wachtrij) krijgt zijn naam mee uit die create_list-mutatie; die
+  // passen we aan in plaats van er een losse hernoem-opdracht achteraan te
+  // sturen voor een lijst die de server nog niet kent.
+  if (entityId.startsWith('local-list:')) {
+    for (const mutation of state.outbox) {
+      if (mutation.type === 'create_list' && mutation.tempListId === entityId) mutation.name = name;
+    }
+    persist();
+    return;
+  }
+  queueMutation({ type: 'rename_list', entity_id: entityId, name });
+}
+
 function removeListLocal(entityId) {
   state.snapshot.lists = state.snapshot.lists.filter((l) => l.entity_id !== entityId);
   delete state.snapshot.items[entityId];
@@ -367,6 +386,7 @@ export {
   getOutbox,
   hasContent,
   addListLocal,
+  renameListLocal,
   removeListLocal,
   getListOrder,
   setListOrderCache,

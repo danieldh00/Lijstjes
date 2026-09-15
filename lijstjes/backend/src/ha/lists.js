@@ -1,4 +1,26 @@
 const { haFetch } = require('./client');
+const { sendCommands } = require('./websocket');
+
+// Zoekt bij een todo-entiteit de local_todo-integratie die 'm aanmaakte. Home
+// Assistant's REST-API legt geen verband tussen een entiteit en zijn config
+// entry, dus we matchen op naam -- dezelfde aanpak als bij het aanmaken. Het
+// hernoemen hieronder past titel én entiteitsnaam samen aan, juist zodat die
+// twee gelijk blijven lopen en deze match blijft kloppen.
+async function findListEntry(entityId, doel) {
+  const states = await haFetch('/states');
+  const entityState = states.find((s) => s.entity_id === entityId);
+  if (!entityState) {
+    throw new Error(`Lijst ${entityId} bestaat niet (meer) in Home Assistant.`);
+  }
+  const friendlyName = entityState.attributes.friendly_name || '';
+
+  const entries = await haFetch('/config/config_entries/entry', { query: { domain: 'local_todo' } });
+  const match = entries.find((e) => (e.title || '').toLowerCase() === friendlyName.toLowerCase());
+  if (!match) {
+    throw new Error(`Kon de Home Assistant-integratie voor "${friendlyName}" niet vinden om te ${doel}.`);
+  }
+  return match;
+}
 
 function slugify(name) {
   return (name || '')
@@ -80,22 +102,26 @@ async function waitForListEntity(expectedName, fallbackTitle) {
 // opgegeven, en die komt overeen met de vriendelijke naam van de bijhorende
 // entiteit.
 async function deleteTodoList(entityId) {
-  const states = await haFetch('/states');
-  const entityState = states.find((s) => s.entity_id === entityId);
-  if (!entityState) {
-    throw new Error(`Lijst ${entityId} bestaat niet (meer) in Home Assistant.`);
-  }
-  const friendlyName = (entityState.attributes.friendly_name || '').toLowerCase();
-
-  const entries = await haFetch('/config/config_entries/entry', { query: { domain: 'local_todo' } });
-  const match = entries.find((e) => (e.title || '').toLowerCase() === friendlyName);
-  if (!match) {
-    throw new Error(
-      `Kon de Home Assistant-integratie voor "${entityState.attributes.friendly_name}" niet vinden om te verwijderen.`
-    );
-  }
-
-  await haFetch(`/config/config_entries/entry/${match.entry_id}`, { method: 'DELETE' });
+  const entry = await findListEntry(entityId, 'verwijderen');
+  await haFetch(`/config/config_entries/entry/${entry.entry_id}`, { method: 'DELETE' });
 }
 
-module.exports = { createTodoList, deleteTodoList };
+// Hernoemen kan niet via REST (zie ha/websocket.js) en gebeurt daarom via twee
+// WebSocket-commando's:
+//   - de titel van de integratie, zodat de lijst ook in Home Assistant's eigen
+//     integratieoverzicht de nieuwe naam draagt;
+//   - de naam in de entiteitenregistratie, want dát is wat friendly_name -- en
+//     dus de naam die de app en de HA-app tonen -- werkelijk bepaalt.
+// Ze worden allebei gezet zodat de twee gelijk blijven lopen; findListEntry
+// hierboven leunt daarop. De opslag van de items hangt aan entry.data en blijft
+// hierbij ongemoeid, en een titelwijziging herlaadt de integratie niet, dus het
+// entity_id en de items veranderen niet.
+async function renameTodoList(entityId, name) {
+  const entry = await findListEntry(entityId, 'hernoemen');
+  await sendCommands([
+    { type: 'config_entries/update', entry_id: entry.entry_id, title: name },
+    { type: 'config/entity_registry/update', entity_id: entityId, name },
+  ]);
+}
+
+module.exports = { createTodoList, deleteTodoList, renameTodoList };

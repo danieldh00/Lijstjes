@@ -17,7 +17,8 @@ apart account-systeem.
   aangemaakt (en andersom: een lijst die je in HA toevoegt, verschijnt in de
   app). Verwijderen (✕, met bevestiging — verwijdert ook echt de
   onderliggende HA-integratie en alle items erin) en herordenen (↑/↓, puur
-  een weergavevoorkeur van de app) kan vanaf het overzicht.
+  een weergavevoorkeur van de app) kan vanaf het overzicht; hernoemen kan via
+  het ⚙-icoontje op een lijstje en wordt ook in Home Assistant doorgevoerd.
 - **Items**: toevoegen, afvinken, verwijderen, herordenen (↑/↓), en
   optioneel een omschrijving en een einddatum instellen.
 - **Sjablonen**: per lijstje bewaarde presets ("Pasta-avond", "Ontbijt",
@@ -94,7 +95,8 @@ lijstjes/
       ha/
         client.js                 Dunne REST-wrapper rond Home Assistant's Core API
         todo.js                    add/update/remove/move/get items via de todo.*-services
-        lists.js                    Lijst aanmaken/verwijderen via de config-entries-API
+        lists.js                    Lijst aanmaken/verwijderen/hernoemen via de config-entries-API
+        websocket.js                 Korte WebSocket-sessie voor wat de REST-API niet kan (hernoemen)
         snapshot.js                 Volledige inhoud van alle lijstjes in één keer
       push.js                     VAPID-sleutels + push-abonnementen + meldingen versturen
       watcher.js                   Achtergrondpoller: detecteert wijzigingen vanuit HA, triggert pushmeldingen
