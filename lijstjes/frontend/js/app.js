@@ -23,25 +23,34 @@ function escapeHtml(str) {
 
 // ---------- Statusbalk ----------
 
+// De synchronisatie hoort onzichtbaar te zijn. Er wordt elke 15 seconden en
+// bij elke wijziging gesynchroniseerd; daar telkens "Synchroniseren…" of een
+// telling van wachtende wijzigingen voor laten opflitsen is alleen maar ruis,
+// want het gaat vanzelf goed. De balk verschijnt daarom alleen nog als er
+// iets is wat je moet weten: dat je offline bent (relevant als je in een
+// winkel zonder bereik staat), of dat wijzigingen niet weggeschreven konden
+// worden en dus nog alleen op dit toestel staan.
 function renderStatus(status) {
-  statusEl.hidden = false;
+  const wachtend = `${status.pending} wijziging${status.pending === 1 ? '' : 'en'} wachten`;
+
   if (status.state === 'offline') {
+    statusEl.hidden = false;
     statusEl.className = 'statusbar offline';
-    statusEl.textContent = status.pending
-      ? `Offline — ${status.pending} wijziging${status.pending === 1 ? '' : 'en'} wachten op sync`
-      : 'Offline — lokaal werken';
-  } else if (status.state === 'error') {
-    statusEl.className = 'statusbar error';
-    statusEl.textContent = `Synchroniseren mislukt (probeer opnieuw zodra je online bent)`;
-  } else if (status.state === 'syncing') {
-    statusEl.className = 'statusbar';
-    statusEl.textContent = 'Synchroniseren…';
-  } else if (status.pending > 0) {
-    statusEl.className = 'statusbar';
-    statusEl.textContent = `${status.pending} wijziging${status.pending === 1 ? '' : 'en'} wachten op sync`;
-  } else {
-    statusEl.hidden = true;
+    statusEl.textContent = status.pending ? `Offline — ${wachtend}` : 'Offline — lokaal werken';
+    return;
   }
+
+  // Een mislukte poll zonder wachtende wijzigingen kost niets -- de volgende
+  // ronde haalt het gewoon opnieuw op. Alleen melden als er iets van de
+  // gebruiker zelf nog niet in Home Assistant staat.
+  if (status.state === 'error' && status.pending > 0) {
+    statusEl.hidden = false;
+    statusEl.className = 'statusbar error';
+    statusEl.textContent = `Synchroniseren mislukt — ${wachtend}`;
+    return;
+  }
+
+  statusEl.hidden = true;
 }
 
 // ---------- Pairing ----------

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.2
+
+- De synchronisatie gebeurt nu volledig onzichtbaar. De balk bovenin liet bij
+  elke poll (elke 15 seconden) en na elke wijziging even "Synchroniseren…" of
+  een telling van wachtende wijzigingen zien; dat is alleen maar ruis, want
+  het gaat vanzelf goed.
+- De balk verschijnt daarom alleen nog als er iets is wat je echt moet weten:
+  dat je offline bent (handig als je in een winkel zonder bereik staat), of
+  dat een wijziging niet weggeschreven kon worden en dus nog alleen op dit
+  toestel staat. Een mislukte achtergrondcontrole zonder wachtende
+  wijzigingen kost niets en blijft nu stil.
+
 ## 0.9.1
 
 - De geïnstalleerde webapp bleef op een oude versie hangen terwijl dezelfde
