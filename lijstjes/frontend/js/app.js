@@ -321,8 +321,7 @@ function renderListDetail(entityId) {
   `);
   appEl.appendChild(addForm);
 
-  if (settings.mealsEnabled) renderMeals(entityId);
-  if (settings.templatesEnabled) renderTemplates(entityId);
+  if (settings.templatesEnabled || settings.mealsEnabled) renderQuickAdd(entityId, settings);
 
   const open = items.filter((i) => i.status !== 'completed');
   const done = items.filter((i) => i.status === 'completed');
@@ -512,53 +511,88 @@ function bindItemActions(entityId) {
 // ophaalt en de sectie niet loopt te knipperen.
 const mealCache = new Map();
 
+// Sjablonen en maaltijden doen hetzelfde: met één tik een setje items op de
+// lijst zetten. Ze staan daarom in één "Snel toevoegen"-rij, sjablonen eerst
+// en de maaltijden daarachter -- niet als twee aparte blokken boven elkaar.
+function renderQuickAdd(entityId, settings) {
+  appEl.appendChild(el(`<div class="section-title">Snel toevoegen</div>`));
+  const row = el(`<div class="template-chips" id="quick-add-chips"></div>`);
+  appEl.appendChild(row);
+
+  if (settings.templatesEnabled) {
+    renderTemplateChips(entityId, row);
+    // Sluit de rij af; maaltijden schuiven hier vóór, zodat de volgorde
+    // sjablonen -> maaltijden -> knop blijft, ook al komen de maaltijden pas
+    // binnen als het ophalen klaar is.
+    const nieuw = el(`<button type="button" class="chip-new" id="new-template-btn">+ Sjabloon</button>`);
+    row.appendChild(nieuw);
+    nieuw.addEventListener('click', () => {
+      location.hash = `#/list/${encodeURIComponent(entityId)}/new-template`;
+    });
+  }
+
+  if (settings.mealsEnabled) renderMeals(entityId);
+}
+
 function renderMeals(entityId) {
-  appEl.appendChild(el(`<div class="section-title">Maaltijden</div>`));
-  const wrap = el(`<div id="meals-section"></div>`);
-  appEl.appendChild(wrap);
+  const extra = el(`<div id="meals-extra"></div>`);
+  appEl.appendChild(extra);
 
   const cached = mealCache.get(entityId);
   if (cached) {
-    paintMeals(entityId, wrap, cached);
+    paintMealChips(entityId, cached);
+    paintMealSearch(entityId);
     return;
   }
 
-  wrap.appendChild(el(`<div class="meals-hint">Weekmenu ophalen…</div>`));
+  extra.appendChild(el(`<div class="meals-hint">Weekmenu ophalen…</div>`));
   api
     .mealieMealplan()
     .then(({ meals }) => {
       mealCache.set(entityId, meals);
-      const live = document.getElementById('meals-section');
-      if (live) paintMeals(entityId, live, meals);
+      paintMealChips(entityId, meals);
+      paintMealSearch(entityId);
     })
     .catch((err) => {
-      const live = document.getElementById('meals-section');
-      if (live) {
-        live.innerHTML = '';
-        live.appendChild(el(`<div class="meals-hint">${escapeHtml(err.message)}</div>`));
-      }
+      const live = document.getElementById('meals-extra');
+      if (!live) return;
+      live.innerHTML = '';
+      live.appendChild(el(`<div class="meals-hint">${escapeHtml(err.message)}</div>`));
     });
 }
 
-function paintMeals(entityId, wrap, meals) {
-  wrap.innerHTML = '';
+// Het ophalen is asynchroon, dus de pagina kan intussen opnieuw getekend zijn;
+// daarom de rij hier opnieuw opzoeken in plaats van een oude verwijzing
+// gebruiken.
+function paintMealChips(entityId, meals) {
+  const row = document.getElementById('quick-add-chips');
+  if (!row) return;
 
-  const row = el(`<div class="template-chips"></div>`);
-  wrap.appendChild(row);
+  // Dit kan meer dan eens langskomen: als de pagina opnieuw getekend wordt
+  // terwijl het ophalen nog loopt, start er een tweede ophaalactie en tekenen
+  // ze allebei in dezelfde rij. Daarom eerst de vorige maaltijdknoppen weg,
+  // zodat het resultaat hetzelfde is hoe vaak dit ook draait.
+  row.querySelectorAll('.meal-chip').forEach((chip) => chip.remove());
 
+  const nieuwKnop = document.getElementById('new-template-btn');
   for (const meal of meals) {
     const chip = el(`
-      <span class="template-chip">
+      <span class="template-chip meal-chip">
         <button type="button" class="chip-apply" data-recipe="${escapeHtml(meal.recipe_id)}">
           ${escapeHtml(mealDayLabel(meal.date))} · ${escapeHtml(meal.name)}
         </button>
       </span>
     `);
-    row.appendChild(chip);
+    chip.querySelector('button').addEventListener('click', (e) => addRecipeIngredients(entityId, e.currentTarget));
+    if (nieuwKnop) row.insertBefore(chip, nieuwKnop);
+    else row.appendChild(chip);
   }
-  if (!meals.length) {
-    wrap.appendChild(el(`<div class="meals-hint">Geen maaltijden ingepland deze week.</div>`));
-  }
+}
+
+function paintMealSearch(entityId) {
+  const wrap = document.getElementById('meals-extra');
+  if (!wrap) return;
+  wrap.innerHTML = '';
 
   const zoek = el(`
     <form class="add-form" id="meal-search-form">
@@ -569,10 +603,6 @@ function paintMeals(entityId, wrap, meals) {
   wrap.appendChild(zoek);
   const resultaten = el(`<div class="template-chips" id="meal-results"></div>`);
   wrap.appendChild(resultaten);
-
-  wrap.querySelectorAll('.chip-apply[data-recipe]').forEach((btn) => {
-    btn.addEventListener('click', () => addRecipeIngredients(entityId, btn));
-  });
 
   zoek.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -637,12 +667,8 @@ async function addRecipeIngredients(entityId, btn) {
 
 // ---------- Sjablonen (snel meerdere items tegelijk toevoegen) ----------
 
-function renderTemplates(entityId) {
+function renderTemplateChips(entityId, row) {
   const templates = storage.getTemplates(entityId);
-
-  appEl.appendChild(el(`<div class="section-title">Snel toevoegen</div>`));
-  const row = el(`<div class="template-chips"></div>`);
-  appEl.appendChild(row);
 
   for (const tpl of templates) {
     const chip = el(`
@@ -653,9 +679,9 @@ function renderTemplates(entityId) {
     `);
     row.appendChild(chip);
   }
-  row.appendChild(el(`<button type="button" class="chip-new" id="new-template-btn">+ Sjabloon</button>`));
-
-  row.querySelectorAll('.chip-apply').forEach((btn) => {
+  // Maaltijdknoppen delen dezelfde opmaakklasse, dus hier expliciet alleen de
+  // sjabloonknoppen (die een data-id hebben) aanhaken.
+  row.querySelectorAll('.chip-apply[data-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const tpl = templates.find((t) => t.id === btn.dataset.id);
       if (!tpl) return;
@@ -676,10 +702,6 @@ function renderTemplates(entityId) {
         alert(`Kon sjabloon niet verwijderen: ${err.message}`);
       }
     });
-  });
-
-  document.getElementById('new-template-btn').addEventListener('click', () => {
-    location.hash = `#/list/${encodeURIComponent(entityId)}/new-template`;
   });
 }
 

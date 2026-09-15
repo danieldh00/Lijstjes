@@ -51,8 +51,9 @@ enige bron van waarheid.
 
 ## Maaltijden uit Mealie op je boodschappenlijst
 
-Zet **Maaltijden** aan via het ⚙-icoontje op een lijstje. Je ziet dan boven
-aan dat lijstje je Mealie-weekmenu van de komende week, plus een zoekveld over
+Zet **Maaltijden** aan via het ⚙-icoontje op een lijstje. Je Mealie-weekmenu
+van de komende week komt dan in de "Snel toevoegen"-rij te staan, achter je
+sjablonen — die doen tenslotte hetzelfde. Daaronder staat een zoekveld over
 al je recepten. Eén tik op een maaltijd zet alle ingrediënten op de lijst, als
 "Gehakt (500 g)" en "Uien (2 stuks)" — product vooraan, hoeveelheid erachter.
 

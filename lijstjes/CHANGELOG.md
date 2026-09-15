@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.1
+
+- Maaltijden staan nu tussen de sjablonen in plaats van in een eigen blok
+  erboven: één "Snel toevoegen"-rij met eerst je sjablonen, daarna de
+  maaltijden uit je weekmenu. Ze doen tenslotte hetzelfde — met één tik een
+  setje items op de lijst zetten.
+
 ## 0.11.0
 
 - **Maaltijden uit Mealie.** Zet "Maaltijden" aan via het ⚙-icoontje op een
