@@ -30,6 +30,9 @@ const api = {
   deleteStore: (id) => request(`/api/stores/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   listSettings: () => request('/api/list-settings'),
   setListSettings: (data) => request('/api/list-settings', { method: 'POST', body: data }),
+  mealieMealplan: () => request('/api/mealie/mealplan'),
+  mealieRecipes: (q) => request(`/api/mealie/recipes?q=${encodeURIComponent(q || '')}`),
+  mealieIngredients: (recipeId) => request(`/api/mealie/recipes/${encodeURIComponent(recipeId)}/ingredients`),
   listOrder: () => request('/api/list-order'),
   setListOrder: (order) => request('/api/list-order', { method: 'POST', body: { order } }),
 };

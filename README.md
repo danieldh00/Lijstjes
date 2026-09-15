@@ -31,10 +31,15 @@ apart account-systeem.
   staat in HA's eigen omschrijving-veld (blijft dus zichtbaar via Assist/de
   HA-app); welke winkels er zijn, staat net als sjablonen in de eigen
   opslag van de add-on.
-- **Per lijstje in-/uitschakelbaar**: Sjablonen en Winkels staan standaard
-  uit (via het ⚙-icoontje op een lijstje aan te zetten) — niet elk lijstje
-  (bv. Klussen) heeft er iets aan. Al gebruikt voordat deze instelling
-  bestond? Dan blijft het gewoon zichtbaar.
+- **Maaltijden uit Mealie**: je Mealie-weekmenu en een zoekveld over al je
+  recepten, boven aan een lijstje. Eén tik zet alle ingrediënten erop, als
+  "Gehakt (500 g)" en "Uien (2 stuks)". Loopt via Home Assistant's eigen
+  Mealie-integratie, dus de app kent zelf geen Mealie-adres of token; die
+  integratie moet wel één keer in HA toegevoegd zijn (zie `lijstjes/DOCS.md`).
+- **Per lijstje in-/uitschakelbaar**: Sjablonen, Winkels en Maaltijden staan
+  standaard uit (via het ⚙-icoontje op een lijstje aan te zetten) — niet elk
+  lijstje (bv. Klussen) heeft er iets aan. Sjablonen/Winkels al gebruikt
+  voordat deze instelling bestond? Dan blijven die gewoon zichtbaar.
 - **Geen accounts**: in plaats van een eigen inlogsysteem koppel je de app
   eenmalig aan Home Assistant met een **Long-Lived Access Token** — dat ene
   token *is* de koppeling, er is niets anders te beheren.
@@ -97,13 +102,14 @@ lijstjes/
         todo.js                    add/update/remove/move/get items via de todo.*-services
         lists.js                    Lijst aanmaken/verwijderen/hernoemen via de config-entries-API
         websocket.js                 Korte WebSocket-sessie voor wat de REST-API niet kan (hernoemen)
+        mealie.js                    Mealie-weekmenu/recepten via HA's mealie.*-services + ingrediëntnotatie
         snapshot.js                 Volledige inhoud van alle lijstjes in één keer
       push.js                     VAPID-sleutels + push-abonnementen + meldingen versturen
       watcher.js                   Achtergrondpoller: detecteert wijzigingen vanuit HA, triggert pushmeldingen
       recentActors.js               Onthoudt welk toestel net zelf iets wijzigde (geen dubbele melding)
       templates.js                  Sjablonen (eigen concept, niet in HA): opslaan/lezen in /data
       stores.js                     Winkels per lijst (eigen concept, niet in HA): opslaan/lezen in /data
-      listSettings.js               Sjablonen/Winkels aan/uit per lijst, met auto-detect als default
+      listSettings.js               Sjablonen/Winkels/Maaltijden aan/uit per lijst, met auto-detect als default
       listOrder.js                   Volgorde van lijstjes op het overzicht (eigen concept, niet in HA)
       routes/
         auth.js                     Pairing-status + koppelen met een Long-Lived Access Token
@@ -114,6 +120,7 @@ lijstjes/
         stores.js                       Winkels aanmaken/opvragen/verwijderen
         listSettings.js                 Sjablonen/Winkels aan/uit per lijst opvragen/opslaan
         listOrder.js                     Volgorde van lijstjes opvragen/opslaan
+        mealie.js                         Weekmenu, receptzoeken en ingrediënten van een recept
   frontend/
     index.html, css/               Opmaak
     js/

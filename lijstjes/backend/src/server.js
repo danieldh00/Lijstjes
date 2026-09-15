@@ -13,6 +13,7 @@ const templatesRoutes = require('./routes/templates');
 const storesRoutes = require('./routes/stores');
 const listSettingsRoutes = require('./routes/listSettings');
 const listOrderRoutes = require('./routes/listOrder');
+const mealieRoutes = require('./routes/mealie');
 const { startWatcher } = require('./watcher');
 const { getRecentActorDeviceIds } = require('./recentActors');
 
@@ -32,6 +33,7 @@ app.use('/api/templates', requireAccess, templatesRoutes);
 app.use('/api/stores', requireAccess, storesRoutes);
 app.use('/api/list-settings', requireAccess, listSettingsRoutes);
 app.use('/api/list-order', requireAccess, listOrderRoutes);
+app.use('/api/mealie', requireAccess, mealieRoutes);
 
 // Hashing de app-shell-bestanden bij het opstarten geeft de service worker
 // een automatisch, aan de inhoud gekoppeld cache-versienummer -- zo dwingt

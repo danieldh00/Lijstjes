@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.11.0
+
+- **Maaltijden uit Mealie.** Zet "Maaltijden" aan via het ⚙-icoontje op een
+  lijstje (bv. Boodschappen) en je ziet daar je Mealie-weekmenu van de
+  komende week, plus een zoekveld over al je recepten. Eén tik op een
+  maaltijd zet alle ingrediënten op de lijst.
+- De ingrediënten komen als "Gehakt (500 g)" en "Uien (2 stuks)" op de lijst:
+  het product vooraan, de hoeveelheid erachter. Zo blijft de lijst te
+  groeperen per winkel en zie je in de winkel toch hoeveel je nodig hebt.
+  Halve en kwart hoeveelheden worden als breuk getoond (1/2 l), en
+  meervoudsvormen en afkortingen volgen wat je in Mealie hebt ingesteld.
+- Dit loopt volledig via Home Assistant's eigen Mealie-integratie, dus de
+  app hoeft zelf geen Mealie-adres of token te kennen. Is die integratie nog
+  niet ingesteld, dan zegt de app dat gewoon in plaats van te mislukken.
+  Ophalen vereist verbinding; de items die eruit komen staan daarna gewoon
+  offline op je lijst.
+
 ## 0.10.0
 
 - Je kunt de naam van een lijstje aanpassen, via het ⚙-icoontje boven aan een

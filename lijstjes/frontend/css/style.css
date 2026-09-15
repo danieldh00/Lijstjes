@@ -218,6 +218,18 @@ h2 { font-size: 18px; font-weight: 500; margin: 0 0 12px; }
   font-size: 12px;
   cursor: pointer;
 }
+/* Nog niet gezocht: geen lege ruimte reserveren voor de resultaten. */
+.template-chips:empty { margin: 0; }
+
+.meals-hint {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 0 0 14px;
+  line-height: 1.45;
+}
+
+#meal-search-form { margin-top: 0; }
+
 .chip-new {
   border: 1px dashed var(--border);
   background: transparent;

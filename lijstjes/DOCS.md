@@ -49,6 +49,26 @@ enige bron van waarheid.
   HA-equivalent, maar de volgorde wordt wel bewaard op de add-on (niet per
   toestel) zodat 'm op al je gekoppelde toestellen hetzelfde is.
 
+## Maaltijden uit Mealie op je boodschappenlijst
+
+Zet **Maaltijden** aan via het ⚙-icoontje op een lijstje. Je ziet dan boven
+aan dat lijstje je Mealie-weekmenu van de komende week, plus een zoekveld over
+al je recepten. Eén tik op een maaltijd zet alle ingrediënten op de lijst, als
+"Gehakt (500 g)" en "Uien (2 stuks)" — product vooraan, hoeveelheid erachter.
+
+Dit werkt via **Home Assistant's eigen Mealie-integratie**, niet via een
+aparte koppeling: de app hoeft je Mealie-adres en -token dus niet te kennen.
+Die integratie moet je wel één keer toevoegen:
+
+1. In Mealie: je profiel → **Manage API Tokens** → maak een token aan.
+2. In Home Assistant: **Instellingen → Apparaten & diensten → Integratie
+   toevoegen → Mealie**, vul het adres van je Mealie-server in plus dat token.
+
+Staat die integratie er nog niet, dan zegt de app dat gewoon in plaats van te
+mislukken. Het ophalen van het weekmenu en de ingrediënten vraagt verbinding —
+dat doe je thuis bij het samenstellen van je lijst. De items die eruit komen
+staan daarna, net als alle andere, gewoon offline op je lijst.
+
 ## Sjablonen en winkels aanzetten per lijstje
 
 Niet elk lijstje heeft hier iets aan — bij Klussen wil je geen "Snel

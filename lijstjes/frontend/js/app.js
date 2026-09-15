@@ -321,6 +321,7 @@ function renderListDetail(entityId) {
   `);
   appEl.appendChild(addForm);
 
+  if (settings.mealsEnabled) renderMeals(entityId);
   if (settings.templatesEnabled) renderTemplates(entityId);
 
   const open = items.filter((i) => i.status !== 'completed');
@@ -498,6 +499,142 @@ function bindItemActions(entityId) {
   });
 }
 
+// ---------- Maaltijden uit Mealie ----------
+//
+// Haalt het weekmenu en recepten live op via Home Assistant's
+// Mealie-integratie, dus dit deel werkt alleen met verbinding. Dat is precies
+// het moment waarop je het gebruikt: thuis je lijst samenstellen. De items die
+// eruit komen gaan daarna via de gewone wachtrij en zijn dus in de winkel ook
+// zonder bereik gewoon beschikbaar.
+//
+// De opgehaalde maaltijden worden per lijst onthouden zolang de pagina open
+// staat, zodat een her-render (achtergrondsync) ze niet telkens opnieuw
+// ophaalt en de sectie niet loopt te knipperen.
+const mealCache = new Map();
+
+function renderMeals(entityId) {
+  appEl.appendChild(el(`<div class="section-title">Maaltijden</div>`));
+  const wrap = el(`<div id="meals-section"></div>`);
+  appEl.appendChild(wrap);
+
+  const cached = mealCache.get(entityId);
+  if (cached) {
+    paintMeals(entityId, wrap, cached);
+    return;
+  }
+
+  wrap.appendChild(el(`<div class="meals-hint">Weekmenu ophalen…</div>`));
+  api
+    .mealieMealplan()
+    .then(({ meals }) => {
+      mealCache.set(entityId, meals);
+      const live = document.getElementById('meals-section');
+      if (live) paintMeals(entityId, live, meals);
+    })
+    .catch((err) => {
+      const live = document.getElementById('meals-section');
+      if (live) {
+        live.innerHTML = '';
+        live.appendChild(el(`<div class="meals-hint">${escapeHtml(err.message)}</div>`));
+      }
+    });
+}
+
+function paintMeals(entityId, wrap, meals) {
+  wrap.innerHTML = '';
+
+  const row = el(`<div class="template-chips"></div>`);
+  wrap.appendChild(row);
+
+  for (const meal of meals) {
+    const chip = el(`
+      <span class="template-chip">
+        <button type="button" class="chip-apply" data-recipe="${escapeHtml(meal.recipe_id)}">
+          ${escapeHtml(mealDayLabel(meal.date))} · ${escapeHtml(meal.name)}
+        </button>
+      </span>
+    `);
+    row.appendChild(chip);
+  }
+  if (!meals.length) {
+    wrap.appendChild(el(`<div class="meals-hint">Geen maaltijden ingepland deze week.</div>`));
+  }
+
+  const zoek = el(`
+    <form class="add-form" id="meal-search-form">
+      <input type="text" id="meal-search" placeholder="Zoek een recept…" />
+      <button class="secondary" type="submit">Zoek</button>
+    </form>
+  `);
+  wrap.appendChild(zoek);
+  const resultaten = el(`<div class="template-chips" id="meal-results"></div>`);
+  wrap.appendChild(resultaten);
+
+  wrap.querySelectorAll('.chip-apply[data-recipe]').forEach((btn) => {
+    btn.addEventListener('click', () => addRecipeIngredients(entityId, btn));
+  });
+
+  zoek.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const term = document.getElementById('meal-search').value.trim();
+    resultaten.innerHTML = '';
+    resultaten.appendChild(el(`<div class="meals-hint">Zoeken…</div>`));
+    try {
+      const { recipes } = await api.mealieRecipes(term);
+      resultaten.innerHTML = '';
+      if (!recipes.length) {
+        resultaten.appendChild(el(`<div class="meals-hint">Geen recepten gevonden.</div>`));
+        return;
+      }
+      for (const recipe of recipes) {
+        const chip = el(`
+          <span class="template-chip">
+            <button type="button" class="chip-apply" data-recipe="${escapeHtml(recipe.recipe_id)}">${escapeHtml(recipe.name)}</button>
+          </span>
+        `);
+        chip.querySelector('button').addEventListener('click', (ev) => addRecipeIngredients(entityId, ev.currentTarget));
+        resultaten.appendChild(chip);
+      }
+    } catch (err) {
+      resultaten.innerHTML = '';
+      resultaten.appendChild(el(`<div class="meals-hint">${escapeHtml(err.message)}</div>`));
+    }
+  });
+}
+
+function mealDayLabel(isoDate) {
+  const dagen = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+  const datum = new Date(`${isoDate}T12:00:00`);
+  if (Number.isNaN(datum.getTime())) return isoDate;
+  const vandaag = new Date();
+  vandaag.setHours(12, 0, 0, 0);
+  const verschil = Math.round((datum - vandaag) / 86400000);
+  if (verschil === 0) return 'vandaag';
+  if (verschil === 1) return 'morgen';
+  return `${dagen[datum.getDay()]} ${datum.getDate()}`;
+}
+
+async function addRecipeIngredients(entityId, btn) {
+  const origineel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Ophalen…';
+  try {
+    const { ingredients } = await api.mealieIngredients(btn.dataset.recipe);
+    if (!ingredients.length) {
+      alert('Dit recept heeft geen ingrediënten in Mealie staan.');
+      return;
+    }
+    sync.mutateAndSync(() => {
+      for (const summary of ingredients) storage.addItemLocal(entityId, { summary });
+    });
+  } catch (err) {
+    alert(`Kon de ingrediënten niet ophalen: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origineel;
+  }
+}
+
 // ---------- Sjablonen (snel meerdere items tegelijk toevoegen) ----------
 
 function renderTemplates(entityId) {
@@ -647,6 +784,10 @@ function renderListSettings(entityId) {
         <input type="checkbox" id="settings-stores" ${settings.storesEnabled ? 'checked' : ''} />
         <span>Winkels — items groeperen op waar je ze moet halen</span>
       </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="settings-meals" ${settings.mealsEnabled ? 'checked' : ''} />
+        <span>Maaltijden — je Mealie-weekmenu en recepten, om de ingrediënten in één tik toe te voegen</span>
+      </label>
       <div class="row">
         <button class="primary" type="submit">Opslaan</button>
       </div>
@@ -658,6 +799,7 @@ function renderListSettings(entityId) {
     e.preventDefault();
     const templatesEnabled = document.getElementById('settings-templates').checked;
     const storesEnabled = document.getElementById('settings-stores').checked;
+    const mealsEnabled = document.getElementById('settings-meals').checked;
     const naam = document.getElementById('settings-name').value.trim();
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;

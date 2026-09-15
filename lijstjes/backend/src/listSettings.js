@@ -6,8 +6,8 @@ const { listStores } = require('./stores');
 
 const SETTINGS_FILE = path.join(DATA_DIR, 'list-settings.json');
 
-// Welke lijstjes "Sjablonen" en "Winkels" laten zien -- niet elk lijstje
-// (bv. Klussen) heeft daar iets aan, dus dit staat per lijst aan/uit.
+// Welke lijstjes "Sjablonen", "Winkels" en "Maaltijden" laten zien -- niet elk
+// lijstje (bv. Klussen) heeft daar iets aan, dus dit staat per lijst aan/uit.
 
 function readAll() {
   try {
@@ -26,10 +26,19 @@ function writeAll(settings) {
 // sjablonen/winkels voor deze lijst bestaan (zodat bestaand gebruik niet
 // ineens verstopt raakt), anders uit.
 function resolve(entityId, explicit) {
-  if (explicit) return { templatesEnabled: !!explicit.templatesEnabled, storesEnabled: !!explicit.storesEnabled };
+  if (explicit) {
+    return {
+      templatesEnabled: !!explicit.templatesEnabled,
+      storesEnabled: !!explicit.storesEnabled,
+      mealsEnabled: !!explicit.mealsEnabled,
+    };
+  }
   return {
     templatesEnabled: listTemplates(entityId).length > 0,
     storesEnabled: listStores(entityId).length > 0,
+    // Maaltijden is nieuw en heeft geen bestaande gegevens om op terug te
+    // vallen, dus die staat standaard uit tot je 'm zelf aanzet.
+    mealsEnabled: false,
   };
 }
 
@@ -52,9 +61,13 @@ function getAllSettings() {
   return result;
 }
 
-function setSettings(entityId, { templatesEnabled, storesEnabled }) {
+function setSettings(entityId, { templatesEnabled, storesEnabled, mealsEnabled }) {
   const all = readAll();
-  all[entityId] = { templatesEnabled: !!templatesEnabled, storesEnabled: !!storesEnabled };
+  all[entityId] = {
+    templatesEnabled: !!templatesEnabled,
+    storesEnabled: !!storesEnabled,
+    mealsEnabled: !!mealsEnabled,
+  };
   writeAll(all);
   return all[entityId];
 }
