@@ -149,11 +149,13 @@ gewoon staan.
 Een wijziging die rechtstreeks in Home Assistant wordt gemaakt — via het
 dashboard, Assist/voice, of een automatisering — komt ook als pushmelding
 binnen op je gekoppelde toestellen, **zonder dat je de app hoeft te
-openen**. De add-on controleert op de achtergrond (elke 20 seconden, zolang
-de add-on draait) of er iets gewijzigd is en stuurt dan een melding met de
-lijstnaam en wat er veranderd is; een tik op de melding opent de app direct
-op dat lijstje. Het toestel waarop de wijziging zelf gemaakt is, krijgt daar
-geen dubbele melding over.
+openen**. De add-on luistert hiervoor op de achtergrond mee via Home
+Assistants WebSocket-API (near-instant); lukt die verbinding niet (bv. een
+oudere HA-versie of een netwerkbeperking), dan valt de add-on automatisch
+terug op periodiek controleren (elke 20 seconden, zolang de add-on draait).
+In beide gevallen krijg je een melding met de lijstnaam en wat er veranderd
+is; een tik op de melding opent de app direct op dat lijstje. Het toestel
+waarop de wijziging zelf gemaakt is, krijgt daar geen dubbele melding over.
 
 Je krijgt hooguit **één melding per lijstje**, ook als je in één keer een hele
 boodschappenlijst vult. Zodra een reeks wijzigingen begint gaat er meteen een

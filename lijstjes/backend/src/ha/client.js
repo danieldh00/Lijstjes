@@ -29,7 +29,11 @@ async function haFetch(pathSuffix, { method = 'GET', body, query } = {}) {
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    const err = new Error(`Home Assistant API-fout (${res.status} op ${pathSuffix}): ${text.slice(0, 300)}`);
+    // Volledige HA-foutrespons alleen in de add-on-log -- kan interne
+    // details bevatten (entity-namen, integratie-specifieke foutmeldingen)
+    // die niet zonder meer naar de browser van elk gekoppeld toestel horen.
+    console.error(`Home Assistant API-fout (${res.status} op ${pathSuffix}):`, text.slice(0, 500));
+    const err = new Error(`Home Assistant API-fout (${res.status} op ${pathSuffix}).`);
     err.status = res.status;
     throw err;
   }

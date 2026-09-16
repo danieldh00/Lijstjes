@@ -188,11 +188,13 @@ als je dit verder wilt verspreiden.
 
 ## Bekende beperkingen
 
-- Pushmeldingen bij een HA-wijziging komen met een vertraging van maximaal
-  de pollinterval van de achtergrondcontrole (standaard 20 seconden) — geen
-  live/instant-push, maar wel volledig automatisch en zonder dat de app
-  open hoeft te staan. Een reeks wijzigingen die bij elkaar hoort levert één
-  melding per lijstje op (zie DOCS.md), geen melding per wijziging.
+- Pushmeldingen bij een HA-wijziging komen normaal near-instant binnen via
+  Home Assistants WebSocket-API; alleen als die verbinding niet lukt, valt
+  de add-on terug op periodiek controleren (maximaal de pollinterval van 20
+  seconden vertraging) — in beide gevallen volledig automatisch en zonder
+  dat de app open hoeft te staan. Een reeks wijzigingen die bij elkaar hoort
+  levert één melding per lijstje op (zie DOCS.md), geen melding per
+  wijziging.
 - Bij een conflict (hetzelfde item op twee toestellen gewijzigd terwijl
   beide een tijd offline waren) is er geen "slimme" merge — de laatst
   binnenkomende wijziging wint, net als bij de Russisch Leren-app. Voor
@@ -201,7 +203,10 @@ als je dit verder wilt verspreiden.
   Long-Lived Access Token toegankelijk voor elk toestel op hetzelfde
   netwerk dat het gekoppelde sessie-cookie heeft — er is geen los account
   per gezinslid. Wil je dat wel, dan is een aanvullend account-systeem
-  nodig (bewust niet gebouwd, op uitdrukkelijk verzoek).
+  nodig (bewust niet gebouwd, op uitdrukkelijk verzoek). Een kwijtgeraakt of
+  niet meer vertrouwd toestel kan je wel direct de toegang ontnemen via
+  "Ontkoppel dit toestel" onderaan het lijstjes-overzicht (op dat toestel
+  zelf) — dat trekt alleen de koppeling van dát toestel in.
 - Nieuwe lijstjes aanmaken vraagt Home Assistant's config-entries-flow-API
   aan (dezelfde API die het frontend gebruikt om integraties toe te
   voegen); dit is getest tegen de `todo.get_items`-service-respons, maar

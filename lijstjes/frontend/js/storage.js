@@ -379,12 +379,32 @@ async function adoptBackgroundSnapshot() {
   }
 }
 
+// Wist alle lokale inhoud na het ontkoppelen van dit toestel -- voorkomt dat
+// gegevens van de vorige koppeling (lijstjes, sjablonen, winkels, per-lijst-
+// instellingen, volgorde) nog zichtbaar blijven, of dat een verouderde
+// outbox alsnog naar HA gestuurd wordt na een nieuwe koppeling.
+function clearAll() {
+  state.snapshot = { lists: [], items: {}, syncedAt: null };
+  state.outbox = [];
+  state.templates = [];
+  state.stores = [];
+  state.listSettings = {};
+  state.listOrder = [];
+  writeJSON(SNAPSHOT_KEY, state.snapshot);
+  writeJSON(OUTBOX_KEY, state.outbox);
+  writeJSON(TEMPLATES_KEY, state.templates);
+  writeJSON(STORES_KEY, state.stores);
+  writeJSON(LIST_SETTINGS_KEY, state.listSettings);
+  writeJSON(LIST_ORDER_KEY, state.listOrder);
+}
+
 export {
   getSnapshot,
   getStateSignature,
   getOutboxSize,
   getOutbox,
   hasContent,
+  clearAll,
   addListLocal,
   renameListLocal,
   removeListLocal,

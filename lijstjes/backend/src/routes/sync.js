@@ -1,5 +1,5 @@
 const express = require('express');
-const { addItem, updateItem, removeItem, moveItem, getItems } = require('../ha/todo');
+const { addItem, updateItem, removeItem, moveItem, getItems, listTodoLists } = require('../ha/todo');
 const { createTodoList, deleteTodoList, renameTodoList } = require('../ha/lists');
 const { buildSnapshot } = require('../ha/snapshot');
 const { markActor } = require('../recentActors');
@@ -29,7 +29,24 @@ function resolveUid(mutation, resolvedUids) {
   return mutation.item;
 }
 
-async function applyMutation(mutation, resolvedUids) {
+// create_list is de enige mutatie zonder bestaande entity_id (die ontstaat
+// pas als gevolg van deze mutatie); elke andere mutatie moet wijzen naar een
+// lijst die op dit moment daadwerkelijk als todo.*-entiteit in Home
+// Assistant bestaat -- anders zou een gekoppeld toestel via de
+// todo.*-services (of rename/delete) elke willekeurige entiteit in HA
+// kunnen aanspreken. Losse, puur functie (geen HA-aanroepen) zodat dit los
+// van een draaiende Home Assistant-instantie getest kan worden.
+function isAllowedMutation(mutation, validEntityIds) {
+  return mutation.type === 'create_list' || validEntityIds.has(mutation.entity_id);
+}
+
+async function applyMutation(mutation, resolvedUids, validEntityIds) {
+  if (!isAllowedMutation(mutation, validEntityIds)) {
+    const err = new Error(`Onbekende of niet-toegestane lijst: ${mutation.entity_id}`);
+    err.status = 400;
+    throw err;
+  }
+
   switch (mutation.type) {
     case 'create_list': {
       const list = await createTodoList(mutation.name);
@@ -89,6 +106,7 @@ router.post('/', async (req, res, next) => {
     const mutations = Array.isArray(req.body?.mutations) ? req.body.mutations : [];
     const results = [];
     const resolvedUids = new Map();
+    const validEntityIds = new Set((await listTodoLists()).map((l) => l.entity_id));
 
     for (const mutation of mutations) {
       const { clientMutationId } = mutation;
@@ -97,7 +115,7 @@ router.post('/', async (req, res, next) => {
         continue;
       }
       try {
-        const result = await applyMutation(mutation, resolvedUids);
+        const result = await applyMutation(mutation, resolvedUids, validEntityIds);
         results.push({ clientMutationId, ok: true, ...result });
         if (clientMutationId) rememberProcessed(clientMutationId, result);
       } catch (err) {
@@ -114,3 +132,4 @@ router.post('/', async (req, res, next) => {
 });
 
 module.exports = router;
+module.exports.isAllowedMutation = isAllowedMutation;

@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.12.0
+
+- **Beveiligingsfix:** de directe poort-3100-route accepteerde ten onrechte
+  een door de client zelf meegestuurde header als bewijs dat een verzoek via
+  het HA-ingress-paneel binnenkwam, wat pairing volledig omzeilde voor wie
+  die poort kon bereiken. Ingress-verkeer wordt nu alleen nog vertrouwd als
+  het daadwerkelijk van Supervisors interne adres komt.
+- Een wijziging via `/api/sync` kan niet langer een willekeurige HA-entiteit
+  aanspreken die niet als lijstje in de app voorkomt.
+- Nieuw: **"Ontkoppel dit toestel"** onder aan het lijstjes-overzicht (op de
+  directe poort-3100-route) — trekt de koppeling van dat ene toestel meteen
+  in, zonder de add-on te herstarten of andere toestellen te raken.
+- Foutmeldingen van Home Assistant komen niet langer met de volledige,
+  ongefilterde responstekst in de browser terecht (wel nog volledig in de
+  add-on-log, voor het uitzoeken van problemen).
+- Pushmeldingen bij een wijziging vanuit Home Assistant komen nu near-instant
+  binnen via HA's WebSocket-events; de bestaande periodieke controle
+  (elke 20 seconden) blijft als vangnet draaien voor het geval die
+  verbinding een keer niet lukt.
+- Alle API-routes hebben nu een basale limiet op het aantal verzoeken per
+  toestel, en koppelpogingen zijn expliciet begrensd tegen ongelimiteerd
+  token-giswerk.
+
 ## 0.11.1
 
 - Maaltijden staan nu tussen de sjablonen in plaats van in een eigen blok

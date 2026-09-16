@@ -178,6 +178,42 @@ function renderOverview() {
 
   bindListActions(lists);
   renderPushBanner();
+  renderUnpairFooter();
+}
+
+// Alleen relevant op de directe poort-3100-route: via ingress is er geen
+// eigen koppeling (het HA-account zelf regelt de toegang), dus niets om los
+// te koppelen.
+function renderUnpairFooter() {
+  if (viaIngress) return;
+
+  const footer = el(`
+    <div class="card" style="margin-top:24px;">
+      <button class="secondary" id="unpair-btn">Ontkoppel dit toestel</button>
+    </div>
+  `);
+  appEl.appendChild(footer);
+
+  document.getElementById('unpair-btn').addEventListener('click', async () => {
+    if (
+      !confirm(
+        'Dit toestel loskoppelen van Home Assistant? Lokale gegevens op dit toestel worden gewist; je kunt daarna opnieuw koppelen met een Long-Lived Access Token.'
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.unpair();
+    } catch (err) {
+      // Ook zonder netwerk lokaal loskoppelen -- de gebruiker vroeg hier
+      // expliciet om, en de server-kant koppeling verliest hooguit een
+      // toestel dat toch al niet meer gebruikt wordt.
+    }
+    storage.clearAll();
+    paired = false;
+    lastSignature = null;
+    render();
+  });
 }
 
 function bindListActions(lists) {
