@@ -86,6 +86,8 @@ apart account-systeem.
 ```
 repository.yaml            Herkenningsbestand: maakt deze repo een HA add-on-repository
 docker-compose.yml          Standalone Docker-variant (buiten de add-on-store om)
+CLAUDE.md                   Architectuur, valkuilen en werkwijze (voor wie hieraan verder werkt)
+test/                       Regressietests, `node test/run.js` — zie test/README.md
 lijstjes/
   config.yaml                HA add-on-configuratie (ingress, poort, Supervisor-API)
   apparmor.txt                AppArmor-profiel (beveiligingsscore 8/8 in Home Assistant)
