@@ -221,6 +221,16 @@ function replaceSnapshot(serverSnapshot) {
   persist();
 }
 
+// Wist alle lokale inhoud (snapshot + outbox) na het ontkoppelen van dit
+// toestel -- voorkomt dat gegevens van de vorige koppeling nog zichtbaar
+// blijven of dat een verouderde outbox alsnog naar HA gestuurd wordt na een
+// nieuwe koppeling.
+function clearAll() {
+  state.snapshot = { lists: [], items: {}, syncedAt: null };
+  state.outbox = [];
+  persist();
+}
+
 export {
   getSnapshot,
   getOutboxSize,
@@ -233,6 +243,7 @@ export {
   moveItemLocal,
   applySyncResult,
   replaceSnapshot,
+  clearAll,
   findList,
   findItem,
 };

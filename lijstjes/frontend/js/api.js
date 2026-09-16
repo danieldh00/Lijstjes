@@ -18,6 +18,7 @@ async function request(path, options = {}) {
 const api = {
   status: () => request('/api/auth/status'),
   pair: (haUrl, token) => request('/api/auth/pair', { method: 'POST', body: { ha_url: haUrl, token } }),
+  unpair: () => request('/api/auth/unpair', { method: 'POST' }),
   content: () => request('/api/content'),
   sync: (mutations) => request('/api/sync', { method: 'POST', body: { mutations } }),
   pushVapidKey: () => request('/api/push/vapid-public-key'),

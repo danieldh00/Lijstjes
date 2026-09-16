@@ -1,10 +1,21 @@
 const express = require('express');
 const { validateToken } = require('../ha/client');
 const { getOperatingCredential, storeOperatingCredential, isSupervised } = require('../config');
-const { createSessionToken, verify } = require('../auth/session');
-const { setSessionCookie, COOKIE_NAME } = require('../middleware');
+const { createSessionToken, verify, revoke } = require('../auth/session');
+const { setSessionCookie, COOKIE_NAME, remoteIp } = require('../middleware');
+const { createRateLimiter } = require('../rateLimit');
 
 const router = express.Router();
+
+// Voorkomt ongelimiteerd token-giswerk en beperkt hoe vaak deze add-on op
+// verzoek van een client een Long-Lived Access Token tegen Home Assistant
+// valideert (elke poging is zelf een verzoek richting HA/Supervisor).
+const pairLimiter = createRateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  keyFn: remoteIp,
+  message: 'Te veel koppelpogingen vanaf dit toestel, probeer het over een paar minuten opnieuw.',
+});
 
 router.get('/status', (req, res) => {
   const cookieToken = req.cookies?.[COOKIE_NAME];
@@ -15,7 +26,7 @@ router.get('/status', (req, res) => {
   });
 });
 
-router.post('/pair', async (req, res, next) => {
+router.post('/pair', pairLimiter, async (req, res, next) => {
   try {
     const { ha_url: haUrl, token } = req.body || {};
     if (!token) {
@@ -63,6 +74,18 @@ router.post('/pair', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// Trekt de koppeling van dit toestel in: het cookie zelf blijft geldig
+// (correcte handtekening), maar verify() wijst 'm voortaan af via de
+// revocatielijst -- zo kan een kwijtgeraakt of niet meer vertrouwd toestel
+// direct de toegang verliezen, zonder dat de add-on herstart hoeft te
+// worden of alle andere gekoppelde toestellen mee te raken.
+router.post('/unpair', (req, res) => {
+  const cookieToken = req.cookies?.[COOKIE_NAME];
+  if (cookieToken) revoke(cookieToken);
+  res.clearCookie(COOKIE_NAME);
+  res.json({ ok: true });
 });
 
 module.exports = router;

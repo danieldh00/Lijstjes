@@ -61,21 +61,25 @@ lijstjes/
     src/
       server.js                Express-app: routes, pairing-gate, static hosting van frontend/
       config.js                 Resolvet de HA-credential (Supervisor-token of ha_url/ha_token)
-      middleware.js              Toegangscontrole: ingress vertrouwen, of gekoppeld toestel
-      auth/session.js             Ondertekende sessie-cookie voor gekoppelde toestellen
+      middleware.js              Toegangscontrole: ingress vertrouwen (Supervisor-IP), of gekoppeld toestel
+      rateLimit.js                Lichte in-memory rate limiter voor de API-routes
+      auth/
+        session.js                 Ondertekende sessie-cookie voor gekoppelde toestellen
+        revocations.js              Ingetrokken (unpaired) sessies, overleeft een herstart
       ha/
         client.js                 Dunne REST-wrapper rond Home Assistant's Core API
         todo.js                    add/update/remove/move/get items via de todo.*-services
         lists.js                    Nieuwe lijst aanmaken via de config-entries-flow-API
         snapshot.js                 Volledige inhoud van alle lijstjes in één keer
       push.js                     VAPID-sleutels + push-abonnementen + meldingen versturen
-      watcher.js                   Achtergrondpoller: detecteert wijzigingen vanuit HA, triggert pushmeldingen
+      watcher.js                   WebSocket-events (met polling-fallback): detecteert wijzigingen vanuit HA, triggert pushmeldingen
       recentActors.js               Onthoudt welk toestel net zelf iets wijzigde (geen dubbele melding)
       routes/
-        auth.js                     Pairing-status + koppelen met een Long-Lived Access Token
+        auth.js                     Pairing-status, koppelen/ontkoppelen met een Long-Lived Access Token
         content.js                   Volledige snapshot voor de eerste (online) vulling
-        sync.js                      Offline-wachtrij van mutaties verwerken (idempotent)
+        sync.js                      Offline-wachtrij van mutaties verwerken (idempotent, entity_id-gevalideerd)
         push.js                       VAPID-sleutel opvragen + toestel (de)abonneren op pushmeldingen
+    test/                          Geautomatiseerde tests (node --test)
   frontend/
     index.html, css/               Opmaak
     js/
@@ -140,10 +144,11 @@ als je dit verder wilt verspreiden.
 
 ## Bekende beperkingen
 
-- Pushmeldingen bij een HA-wijziging komen met een vertraging van maximaal
-  de pollinterval van de achtergrondcontrole (standaard 20 seconden) — geen
-  live/instant-push, maar wel volledig automatisch en zonder dat de app
-  open hoeft te staan.
+- Pushmeldingen bij een HA-wijziging komen normaal near-instant binnen via
+  Home Assistants WebSocket-API; alleen als die verbinding niet lukt, valt
+  de add-on terug op periodiek controleren (maximaal de pollinterval van 20
+  seconden vertraging) — in beide gevallen volledig automatisch en zonder
+  dat de app open hoeft te staan.
 - Bij een conflict (hetzelfde item op twee toestellen gewijzigd terwijl
   beide een tijd offline waren) is er geen "slimme" merge — de laatst
   binnenkomende wijziging wint, net als bij de Russisch Leren-app. Voor
@@ -152,7 +157,10 @@ als je dit verder wilt verspreiden.
   Long-Lived Access Token toegankelijk voor elk toestel op hetzelfde
   netwerk dat het gekoppelde sessie-cookie heeft — er is geen los account
   per gezinslid. Wil je dat wel, dan is een aanvullend account-systeem
-  nodig (bewust niet gebouwd, op uitdrukkelijk verzoek).
+  nodig (bewust niet gebouwd, op uitdrukkelijk verzoek). Een kwijtgeraakt of
+  niet meer vertrouwd toestel kan je wel direct de toegang ontnemen via
+  "Ontkoppel dit toestel" onderaan het lijstjes-overzicht (op dat toestel
+  zelf) — dat trekt alleen de koppeling van dát toestel in.
 - Nieuwe lijstjes aanmaken vraagt Home Assistant's config-entries-flow-API
   aan (dezelfde API die het frontend gebruikt om integraties toe te
   voegen); dit is getest tegen de `todo.get_items`-service-respons, maar

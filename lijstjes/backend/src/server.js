@@ -2,7 +2,8 @@ const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 
-const { requireAccess } = require('./middleware');
+const { requireAccess, remoteIp } = require('./middleware');
+const { createRateLimiter } = require('./rateLimit');
 const authRoutes = require('./routes/auth');
 const contentRoutes = require('./routes/content');
 const syncRoutes = require('./routes/sync');
@@ -14,14 +15,27 @@ const app = express();
 const PORT = process.env.PORT || 3100;
 const FRONTEND_DIR = path.join(__dirname, '..', '..', 'frontend');
 
-app.set('trust proxy', true);
+// Geen 'trust proxy': niets in deze app leunt op req.ip/req.secure, en
+// blind X-Forwarded-*-headers vertrouwen zou een aanvaller net zo makkelijk
+// toestaan zich voor te doen als intern verkeer. Ingress-herkenning gebeurt
+// in middleware.js op basis van het echte TCP-bronadres.
 app.use(express.json());
 app.use(cookieParser());
 
+// Generieke bovengrens per gekoppeld toestel (of, vóór koppeling, per IP) op
+// alle API-routes -- ruim boven wat normaal gebruik (sync-polling elke 15s,
+// UI-acties) ooit nodig heeft, maar stopt een vastgelopen client of misbruik
+// van de HA-doorgeefluik-routes.
+const apiLimiter = createRateLimiter({
+  windowMs: 10 * 1000,
+  max: 60,
+  keyFn: (req) => req.deviceId || remoteIp(req),
+});
+
 app.use('/api/auth', authRoutes);
-app.use('/api/content', requireAccess, contentRoutes);
-app.use('/api/sync', requireAccess, syncRoutes);
-app.use('/api/push', requireAccess, pushRoutes);
+app.use('/api/content', requireAccess, apiLimiter, contentRoutes);
+app.use('/api/sync', requireAccess, apiLimiter, syncRoutes);
+app.use('/api/push', requireAccess, apiLimiter, pushRoutes);
 
 app.use(express.static(FRONTEND_DIR));
 
