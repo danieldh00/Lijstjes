@@ -119,6 +119,7 @@ function renderOverview() {
   const header = el(`
     <div class="topbar">
       <h1>Lijstjes</h1>
+      ${viaIngress ? '' : `<a class="back" href="#/instellingen" title="Instellingen">${uiIcon('cog', 22)}</a>`}
     </div>
   `);
   appEl.appendChild(header);
@@ -178,30 +179,48 @@ function renderOverview() {
 
   bindListActions(lists);
   renderPushBanner();
-  renderUnpairFooter();
 }
 
-// Alleen relevant op de directe poort-3100-route: via ingress is er geen
-// eigen koppeling (het HA-account zelf regelt de toegang), dus niets om los
-// te koppelen.
-function renderUnpairFooter() {
-  if (viaIngress) return;
+// ---------- Instellingen (app-breed) ----------
 
-  const footer = el(`
-    <div class="card" style="margin-top:24px;">
+// Alleen bereikbaar op de directe poort-3100-route (het tandwiel op het
+// overzicht is er niet via ingress, zie renderOverview): via ingress is er
+// geen eigen koppeling om los te koppelen. Op een eigen scherm in plaats van
+// een knop direct op het overzicht -- die werd te makkelijk per ongeluk
+// aangetikt.
+function renderSettings() {
+  if (viaIngress) {
+    // Rechtstreeks ingetypte hash e.d. -- via ingress is er niets in te
+    // stellen (geen eigen koppeling), gewoon terug naar het overzicht.
+    location.hash = '#/';
+    return;
+  }
+  appEl.innerHTML = '';
+
+  appEl.appendChild(
+    el(`
+    <div class="topbar">
+      <a class="back" href="#/" title="Terug">${uiIcon('back', 26)}</a>
+      <h1>Instellingen</h1>
+      <span></span>
+    </div>
+  `)
+  );
+
+  const card = el(`
+    <div class="card">
+      <p style="margin:0 0 12px;color:var(--muted);font-size:13.5px;">
+        Koppelt dit toestel los van Home Assistant. Lokale gegevens op dit
+        toestel worden gewist; je kunt daarna opnieuw koppelen met een
+        Long-Lived Access Token.
+      </p>
       <button class="secondary" id="unpair-btn">Ontkoppel dit toestel</button>
     </div>
   `);
-  appEl.appendChild(footer);
+  appEl.appendChild(card);
 
   document.getElementById('unpair-btn').addEventListener('click', async () => {
-    if (
-      !confirm(
-        'Dit toestel loskoppelen van Home Assistant? Lokale gegevens op dit toestel worden gewist; je kunt daarna opnieuw koppelen met een Long-Lived Access Token.'
-      )
-    ) {
-      return;
-    }
+    if (!confirm('Dit toestel loskoppelen van Home Assistant?')) return;
     try {
       await api.unpair();
     } catch (err) {
@@ -1055,6 +1074,8 @@ function renderView() {
     renderListSettings(decodeURIComponent(settingsMatch[1]));
   } else if (listMatch) {
     renderListDetail(decodeURIComponent(listMatch[1]));
+  } else if (hash === '#/instellingen') {
+    renderSettings();
   } else {
     renderOverview();
   }

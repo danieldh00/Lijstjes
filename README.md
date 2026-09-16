@@ -204,9 +204,9 @@ als je dit verder wilt verspreiden.
   netwerk dat het gekoppelde sessie-cookie heeft — er is geen los account
   per gezinslid. Wil je dat wel, dan is een aanvullend account-systeem
   nodig (bewust niet gebouwd, op uitdrukkelijk verzoek). Een kwijtgeraakt of
-  niet meer vertrouwd toestel kan je wel direct de toegang ontnemen via
-  "Ontkoppel dit toestel" onderaan het lijstjes-overzicht (op dat toestel
-  zelf) — dat trekt alleen de koppeling van dát toestel in.
+  niet meer vertrouwd toestel kan je wel direct de toegang ontnemen via het
+  tandwiel-icoontje boven het lijstjes-overzicht → "Ontkoppel dit toestel"
+  (op dat toestel zelf) — dat trekt alleen de koppeling van dát toestel in.
 - Nieuwe lijstjes aanmaken vraagt Home Assistant's config-entries-flow-API
   aan (dezelfde API die het frontend gebruikt om integraties toe te
   voegen); dit is getest tegen de `todo.get_items`-service-respons, maar

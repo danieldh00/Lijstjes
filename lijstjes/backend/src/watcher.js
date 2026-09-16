@@ -145,12 +145,16 @@ function wsUrlFor(baseUrl) {
 function scheduleEarlyPoll(getRecentActorDeviceIds) {
   clearTimeout(earlyPollTimer);
   earlyPollTimer = setTimeout(() => poll(getRecentActorDeviceIds), EARLY_POLL_DEBOUNCE_MS);
+  // Puur een latency-optimalisatie bovenop de sowieso al lopende polling-lus
+  // -- mag het proces nooit op zichzelf levend houden (bv. bij een nette
+  // shutdown, of in een testomgeving die geen echte server draait).
+  earlyPollTimer.unref?.();
 }
 
 function scheduleReconnect(getRecentActorDeviceIds) {
   wsReconnectAttempt += 1;
   const delay = Math.min(WS_RECONNECT_BASE_MS * 2 ** Math.min(wsReconnectAttempt, 5), WS_RECONNECT_MAX_MS);
-  setTimeout(() => connectWebSocket(getRecentActorDeviceIds), delay);
+  setTimeout(() => connectWebSocket(getRecentActorDeviceIds), delay).unref?.();
 }
 
 function connectWebSocket(getRecentActorDeviceIds) {

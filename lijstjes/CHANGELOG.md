@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.1
+
+- **"Ontkoppel dit toestel"** stond direct op het lijstjes-overzicht en was
+  daardoor te makkelijk per ongeluk aan te tikken. Die actie staat nu achter
+  een eigen instellingenscherm, bereikbaar via het tandwiel-icoontje boven
+  het overzicht (alleen op de directe poort-3100-route).
+
 ## 0.12.0
 
 - **Beveiligingsfix:** de directe poort-3100-route accepteerde ten onrechte

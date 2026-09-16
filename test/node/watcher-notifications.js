@@ -13,7 +13,7 @@ Module._load = function (request, parent, isMain) {
   if (parent && parent.filename && parent.filename.endsWith('watcher.js')) {
     if (request === './ha/snapshot') return { buildSnapshot: async () => snapshotQueue.shift() };
     if (request === './push') return { sendNotificationToAll: async (p) => sent.push(p) };
-    if (request === './config') return { hasOperatingCredential: () => true };
+    if (request === './config') return { hasOperatingCredential: () => true, getOperatingCredential: () => null };
   }
   return origLoad.apply(this, arguments);
 };
