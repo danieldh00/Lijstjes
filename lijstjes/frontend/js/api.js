@@ -36,6 +36,9 @@ const api = {
   mealieIngredients: (recipeId) => request(`/api/mealie/recipes/${encodeURIComponent(recipeId)}/ingredients`),
   listOrder: () => request('/api/list-order'),
   setListOrder: (order) => request('/api/list-order', { method: 'POST', body: { order } }),
+  itemStores: () => request('/api/item-stores'),
+  rememberItemStore: (entityId, itemName, store) =>
+    request('/api/item-stores', { method: 'POST', body: { entity_id: entityId, item_name: itemName, store } }),
 };
 
 export default api;

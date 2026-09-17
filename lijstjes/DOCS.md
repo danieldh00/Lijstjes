@@ -100,6 +100,12 @@ lijst groepeert open items dan automatisch per winkel, zodat je overzichtelijk
 per winkel kunt afvinken. Gebruik je geen winkels, dan blijft de lijst gewoon
 plat zoals altijd.
 
+De app **onthoudt welke winkel bij welke itemnaam hoort**: typ je een item
+dat je eerder al een winkel gaf (bv. "Melk"), dan staat die winkel er meteen
+bij — ook als het oude item allang afgevinkt en opgeruimd is. Je hoeft de
+winkel dus alleen de eerste keer te kiezen; klopt de suggestie een keer niet,
+dan kies je gewoon een andere en onthoudt de app voortaan die.
+
 Net als sjablonen is dit geen apart HA-concept — welke winkels er per lijst
 bestaan staat in de eigen opslag van de add-on. De koppeling van een *item*
 aan een winkel staat wél gewoon in Home Assistant zelf (in het

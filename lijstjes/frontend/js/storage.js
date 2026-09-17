@@ -9,6 +9,7 @@ const TEMPLATES_KEY = 'lijstjes:templates';
 const STORES_KEY = 'lijstjes:stores';
 const LIST_SETTINGS_KEY = 'lijstjes:list-settings';
 const LIST_ORDER_KEY = 'lijstjes:list-order';
+const ITEM_STORES_KEY = 'lijstjes:item-stores';
 
 // Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
 // pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
@@ -50,6 +51,7 @@ const state = {
   stores: readJSON(STORES_KEY, []),
   listSettings: readJSON(LIST_SETTINGS_KEY, {}),
   listOrder: readJSON(LIST_ORDER_KEY, []),
+  itemStores: readJSON(ITEM_STORES_KEY, []),
 };
 
 function persist() {
@@ -99,6 +101,40 @@ function getStores(entityId) {
 function setStoresCache(stores) {
   state.stores = stores;
   writeJSON(STORES_KEY, state.stores);
+}
+
+// Onthoudt welke winkel bij een itemnaam hoort ("melk" -> "Albert Heijn"),
+// zodat je die niet elke keer opnieuw hoeft te kiezen bij een terugkerend
+// item -- ook nadat het oude item allang afgevinkt en opgeruimd is. Zelfde
+// opzet als sjablonen/winkels: een los gecachet lijstje, nu alleen als
+// key/value-paar per lijst in plaats van objecten met een eigen id.
+function normalizeItemKey(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function getItemStoreMemory(entityId) {
+  const map = {};
+  for (const entry of state.itemStores) {
+    if (entry.entity_id === entityId) map[entry.itemKey] = entry.store;
+  }
+  return map;
+}
+
+function setItemStoresCache(itemStores) {
+  state.itemStores = itemStores;
+  writeJSON(ITEM_STORES_KEY, state.itemStores);
+}
+
+// Optimistisch: meteen lokaal bijwerken (werkt ook offline), los van de
+// fire-and-forget server-sync in sync.js.
+function rememberItemStoreLocal(entityId, itemName, store) {
+  const itemKey = normalizeItemKey(itemName);
+  if (!itemKey || !store) return;
+  const idx = state.itemStores.findIndex((e) => e.entity_id === entityId && e.itemKey === itemKey);
+  const entry = { entity_id: entityId, itemKey, store };
+  if (idx === -1) state.itemStores.push(entry);
+  else state.itemStores[idx] = entry;
+  writeJSON(ITEM_STORES_KEY, state.itemStores);
 }
 
 // Per lijst: staan Sjablonen/Winkels aan? Niet elk lijstje (bv. Klussen)
@@ -390,12 +426,14 @@ function clearAll() {
   state.stores = [];
   state.listSettings = {};
   state.listOrder = [];
+  state.itemStores = [];
   writeJSON(SNAPSHOT_KEY, state.snapshot);
   writeJSON(OUTBOX_KEY, state.outbox);
   writeJSON(TEMPLATES_KEY, state.templates);
   writeJSON(STORES_KEY, state.stores);
   writeJSON(LIST_SETTINGS_KEY, state.listSettings);
   writeJSON(LIST_ORDER_KEY, state.listOrder);
+  writeJSON(ITEM_STORES_KEY, state.itemStores);
 }
 
 export {
@@ -423,6 +461,9 @@ export {
   setTemplatesCache,
   getStores,
   setStoresCache,
+  getItemStoreMemory,
+  setItemStoresCache,
+  rememberItemStoreLocal,
   getListSettings,
   setAllListSettingsCache,
   setListSettingsCache,

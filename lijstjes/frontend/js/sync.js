@@ -110,6 +110,27 @@ async function refreshListOrder() {
   }
 }
 
+// Welke winkel bij een itemnaam hoort ("melk" -> "Albert Heijn") -- zelfde
+// behandeling: los ophalen en cachen, geen Home Assistant-data.
+async function refreshItemStores() {
+  try {
+    const { itemStores } = await api.itemStores();
+    storage.setItemStoresCache(itemStores);
+  } catch (err) {
+    // stil falen -- geen netwerk
+  }
+}
+
+// Meteen lokaal onthouden (werkt ook offline) en de server op de hoogte
+// stellen als dat lukt -- geen kritieke data, dus geen outbox/retry nodig:
+// mislukt de aanroep, dan blijft de vorige (of geen) koppeling gewoon staan
+// en probeert de eerstvolgende keer dat dit item met een winkel opgeslagen
+// wordt het gewoon opnieuw.
+function rememberItemStore(entityId, itemName, store) {
+  storage.rememberItemStoreLocal(entityId, itemName, store);
+  api.rememberItemStore(entityId, itemName, store).catch(() => {});
+}
+
 async function init() {
   // Voordat we ook maar iets over het netwerk proberen: is er een snapshot
   // die de service worker op de achtergrond heeft opgehaald (via een
@@ -156,6 +177,7 @@ async function init() {
   refreshStores();
   refreshListSettings();
   refreshListOrder();
+  refreshItemStores();
 }
 
 function mutateAndSync(mutateFn) {
@@ -175,4 +197,6 @@ export {
   refreshStores,
   refreshListSettings,
   refreshListOrder,
+  refreshItemStores,
+  rememberItemStore,
 };

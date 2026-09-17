@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.0
+
+- **Winkel-geheugen.** De app onthoudt voortaan welke winkel bij welke
+  itemnaam hoort: typ je "Melk" en die stond eerder bij Albert Heijn, dan
+  staat die winkel meteen goed geselecteerd — ook als het oude item allang
+  afgevinkt en opgeruimd was. Werkt ook bij het met één tik toevoegen van
+  een heel sjabloon. Kies je een andere winkel, dan onthoudt de app
+  voortaan die.
+
 ## 0.12.1
 
 - **"Ontkoppel dit toestel"** stond direct op het lijstjes-overzicht en was

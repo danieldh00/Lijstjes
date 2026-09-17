@@ -1,5 +1,5 @@
 name: "Lijstjes"
-version: "0.12.1"
+version: "0.13.0"
 slug: lijstjes
 description: >-
   Offline-first lijstjes-app die synchroniseert met de Home Assistant

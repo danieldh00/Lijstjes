@@ -340,6 +340,27 @@ function buildDescription(store, note) {
   return parts.length ? parts.join('\n') : '';
 }
 
+// Welke winkel hoort er bij deze itemnaam? Eerst het expliciet onthouden
+// geheugen (overleeft ook het afvinken en opruimen van het oude item), en
+// anders terugvallen op een item met dezelfde naam dat nu nog op de lijst
+// staat (bv. nog niet opgeruimd afgevinkt item) -- zo werkt de suggestie ook
+// meteen voor bestaand gebruik, zonder dat er al iets expliciet onthouden is.
+function suggestStoreForItem(entityId, name) {
+  const key = String(name || '').trim().toLowerCase();
+  if (!key) return null;
+
+  const remembered = storage.getItemStoreMemory(entityId)[key];
+  if (remembered) return remembered;
+
+  const items = storage.getSnapshot().items[entityId] || [];
+  for (let i = items.length - 1; i >= 0; i--) {
+    if (items[i].summary.trim().toLowerCase() !== key) continue;
+    const { store } = parseItemMeta(items[i].description);
+    if (store) return store;
+  }
+  return null;
+}
+
 function renderListDetail(entityId) {
   const snapshot = storage.getSnapshot();
   const list = storage.findList(entityId);
@@ -375,6 +396,17 @@ function renderListDetail(entityId) {
     </form>
   `);
   appEl.appendChild(addForm);
+
+  // Winkel live voorstellen terwijl je typt (net als het icoonvoorbeeld bij
+  // een nieuw lijstje) -- zodra de naam een eerder bekend item is, staat de
+  // winkel meteen goed en hoef je 'm niet elke keer opnieuw te kiezen.
+  if (stores.length) {
+    const nameInput = document.getElementById('new-item-summary');
+    const storeSelect = document.getElementById('new-item-store');
+    nameInput.addEventListener('input', () => {
+      storeSelect.value = suggestStoreForItem(entityId, nameInput.value) || '';
+    });
+  }
 
   if (settings.templatesEnabled || settings.mealsEnabled) renderQuickAdd(entityId, settings);
 
@@ -412,6 +444,7 @@ function renderListDetail(entityId) {
     // de inhoud van het actieve invoerveld mee over.
     input.value = '';
     if (storeSelect) storeSelect.value = '';
+    if (store) sync.rememberItemStore(entityId, summary, store);
     sync.mutateAndSync(() => storage.addItemLocal(entityId, { summary, description: buildDescription(store, '') }));
   });
 
@@ -741,7 +774,10 @@ function renderTemplateChips(entityId, row) {
       const tpl = templates.find((t) => t.id === btn.dataset.id);
       if (!tpl) return;
       sync.mutateAndSync(() => {
-        for (const summary of tpl.items) storage.addItemLocal(entityId, { summary });
+        for (const summary of tpl.items) {
+          const store = suggestStoreForItem(entityId, summary);
+          storage.addItemLocal(entityId, { summary, description: buildDescription(store, '') });
+        }
       });
     });
   });
@@ -959,6 +995,7 @@ function renderItemEdit(entityId, uid) {
     const storeSelect = document.getElementById('store');
     const store = storeSelect ? storeSelect.value : currentStore;
     const dueDate = document.getElementById('due_date').value;
+    if (store) sync.rememberItemStore(entityId, summary, store);
     sync.mutateAndSync(() =>
       storage.updateItemLocal(entityId, uid, {
         summary,

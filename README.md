@@ -30,7 +30,9 @@ apart account-systeem.
   de lijst automatisch per winkel zien gegroepeerd. De koppeling item→winkel
   staat in HA's eigen omschrijving-veld (blijft dus zichtbaar via Assist/de
   HA-app); welke winkels er zijn, staat net als sjablonen in de eigen
-  opslag van de add-on.
+  opslag van de add-on. De app **onthoudt welke winkel bij welke itemnaam
+  hoort**, dus die hoef je maar één keer te kiezen — ook nadat het oude item
+  allang afgevinkt en opgeruimd is.
 - **Maaltijden uit Mealie**: je Mealie-weekmenu en een zoekveld over al je
   recepten, boven aan een lijstje. Eén tik zet alle ingrediënten erop, als
   "Gehakt (500 g)" en "Uien (2 stuks)". Loopt via Home Assistant's eigen
@@ -97,8 +99,11 @@ lijstjes/
     src/
       server.js                Express-app: routes, pairing-gate, static hosting van frontend/
       config.js                 Resolvet de HA-credential (Supervisor-token of ha_url/ha_token)
-      middleware.js              Toegangscontrole: ingress vertrouwen, of gekoppeld toestel
-      auth/session.js             Ondertekende sessie-cookie voor gekoppelde toestellen
+      middleware.js              Toegangscontrole: ingress vertrouwen (Supervisor-IP), of gekoppeld toestel
+      rateLimit.js                Lichte in-memory rate limiter voor de API-routes
+      auth/
+        session.js                 Ondertekende sessie-cookie voor gekoppelde toestellen
+        revocations.js              Ingetrokken (unpaired) sessies, overleeft een herstart
       ha/
         client.js                 Dunne REST-wrapper rond Home Assistant's Core API
         todo.js                    add/update/remove/move/get items via de todo.*-services
@@ -111,18 +116,21 @@ lijstjes/
       recentActors.js               Onthoudt welk toestel net zelf iets wijzigde (geen dubbele melding)
       templates.js                  Sjablonen (eigen concept, niet in HA): opslaan/lezen in /data
       stores.js                     Winkels per lijst (eigen concept, niet in HA): opslaan/lezen in /data
+      itemStoreMemory.js             Onthoudt welke winkel bij welke itemnaam hoort (eigen concept, niet in HA)
       listSettings.js               Sjablonen/Winkels/Maaltijden aan/uit per lijst, met auto-detect als default
       listOrder.js                   Volgorde van lijstjes op het overzicht (eigen concept, niet in HA)
       routes/
-        auth.js                     Pairing-status + koppelen met een Long-Lived Access Token
+        auth.js                     Pairing-status, koppelen/ontkoppelen met een Long-Lived Access Token
         content.js                   Volledige snapshot voor de eerste (online) vulling
-        sync.js                      Offline-wachtrij van mutaties verwerken (idempotent)
+        sync.js                      Offline-wachtrij van mutaties verwerken (idempotent, entity_id-gevalideerd)
         push.js                       VAPID-sleutel opvragen + toestel (de)abonneren op pushmeldingen
         templates.js                   Sjablonen aanmaken/opvragen/verwijderen
         stores.js                       Winkels aanmaken/opvragen/verwijderen
+        itemStoreMemory.js               Winkel per itemnaam opvragen/onthouden
         listSettings.js                 Sjablonen/Winkels aan/uit per lijst opvragen/opslaan
         listOrder.js                     Volgorde van lijstjes opvragen/opslaan
         mealie.js                         Weekmenu, receptzoeken en ingrediënten van een recept
+    test/                          Geautomatiseerde tests (node --test)
   frontend/
     index.html, css/               Opmaak
     js/
