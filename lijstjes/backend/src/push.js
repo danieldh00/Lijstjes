@@ -65,11 +65,15 @@ async function sendNotificationToAll(payload, excludeDeviceIds = new Set()) {
           await webpush.sendNotification(s.subscription, body);
         } catch (err) {
           // 404/410 = het abonnement bestaat niet meer aan browserzijde
-          // (app verwijderd, toestel losgekoppeld) -- opruimen.
-          if (err.statusCode === 404 || err.statusCode === 410) {
+          // (app verwijderd, toestel losgekoppeld). 401/403 = de VAPID-sleutel
+          // waarmee dit abonnement ooit is aangemaakt klopt niet meer (bv.
+          // /data/vapid.json is op enig moment vervangen/gewist) -- net zo
+          // permanent kapot, blijft anders elke poll opnieuw (en zonder
+          // succes) geprobeerd worden. In beide gevallen opruimen.
+          if ([401, 403, 404, 410].includes(err.statusCode)) {
             stale.push(s.subscription.endpoint);
           } else {
-            console.error('Pushmelding mislukt:', err.message);
+            console.error(`Pushmelding mislukt (${err.statusCode ?? 'onbekende status'}):`, err.message);
           }
         }
       })

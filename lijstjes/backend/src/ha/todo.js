@@ -33,8 +33,14 @@ async function updateItem(entityId, uid, changes) {
   const body = { entity_id: entityId, item: uid };
   if (changes.summary !== undefined) body.rename = changes.summary;
   if (changes.status !== undefined) body.status = changes.status;
-  if (changes.due_date !== undefined) body.due_date = changes.due_date || '';
-  if (changes.due_datetime !== undefined) body.due_datetime = changes.due_datetime || '';
+  // HA's todo.update_item valideert due_date/due_datetime strikt als
+  // datum/tijd (cv.date/cv.datetime) -- een lege string ('geen datum') is
+  // daar geen geldige waarde voor en levert een 400 Bad Request op. Zonder
+  // datum hoort het veld dus gewoon weggelaten te worden (net als bij
+  // addItem hierboven), niet als lege string meegestuurd. Dat liet
+  // vrijwel elke bewerking van een item zonder einddatum mislukken.
+  if (changes.due_date) body.due_date = changes.due_date;
+  if (changes.due_datetime) body.due_datetime = changes.due_datetime;
   if (changes.description !== undefined) body.description = changes.description || '';
   await haFetch('/services/todo/update_item', { method: 'POST', body });
 }

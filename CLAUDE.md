@@ -101,6 +101,19 @@ lijstjes/frontend/
     hij alsnog binnenkomt (het "springt terug na opslaan"-symptoom). Zelfde
     reden dat `applySyncResult` (storage.js) een mislukte mutatie in de
     wachtrij laat staan in plaats van 'm stil te laten vervallen.
+15. **`todo.update_item` accepteert geen lege due_date/due_datetime.** HA
+    valideert die velden strikt als datum/tijd (`cv.date`/`cv.datetime`);
+    een lege string ('geen einddatum') levert een 400 Bad Request op, niet
+    een "verwijder de datum"-instructie. Zonder datum hoort het veld dus
+    weggelaten (net als in `addItem`), nooit als `''` meegestuurd — anders
+    mislukt zo ongeveer elke bewerking van een item zonder einddatum, wat
+    zich alleen uitte als een stille terugval dankzij valkuil 14 hierboven.
+    Zie `test/node/ha-todo-update-item.js`.
+16. **Een push-abonnement dat blijft mislukken zonder 404/410** (401/403 =
+    VAPID-sleutel klopt niet meer, bv. na een vervangen `vapid.json`) moet
+    ook opgeruimd worden — anders blijft `sendNotificationToAll` 'm bij
+    elke poll opnieuw proberen en de log vollopen met "Pushmelding
+    mislukt".
 
 ## Werkwijze per wijziging
 
@@ -113,7 +126,10 @@ lijstjes/frontend/
 
 ## Open punt
 
-De **Mealie-integratie in HA is nog niet geconfigureerd** (de Mealie-add-on
-draait wel). Tot dat gebeurt bestaan de `mealie.*`-services niet en toont de
-app een nette melding. De Mealie-code is getest tegen nagebootste responses,
-niet tegen de echte integratie.
+De **Mealie-integratie staat inmiddels in HA geconfigureerd** (`state:
+"loaded"`) — de eerdere aanname dat de `mealie.*`-services nog niet bestaan
+klopt dus niet meer. De Mealie-code is nog steeds alleen tegen nagebootste
+responses getest, niet tegen de echte integratie; controleer bij het
+volgende Mealie-gerelateerde issue eerst de add-on-log
+(`ha_get_logs(source="supervisor", slug="196a7da8_lijstjes")`) op een
+`mealie.*`-foutmelding voordat je een nieuwe bug aanneemt.

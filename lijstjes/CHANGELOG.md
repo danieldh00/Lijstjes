@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.2
+
+- **De echte oorzaak gevonden van de mislukte item-bewerking uit 0.13.1:**
+  Home Assistant wijst een lege einddatum af met een foutmelding (een
+  einddatum verwijderen is iets anders dan 'm leeglaten) — daardoor
+  mislukte vrijwel elke bewerking van een item zonder einddatum, wat zich
+  na de vorige fix toonde als een aanhoudende "Synchroniseren mislukt"-
+  melding. Bewerken zonder einddatum werkt nu gewoon.
+- Opgeruimd: een push-abonnement waarvan de sleutel niet meer klopt (bv.
+  na een vervangen sleutelbestand) bleef bij elke controle opnieuw falen
+  en de log vollopen — wordt nu net als een verwijderd abonnement
+  opgeruimd.
+
 ## 0.13.1
 
 - **Fix: een bewerkt item sprong terug naar zijn oude waarde.** Een
