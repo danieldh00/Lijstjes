@@ -338,13 +338,13 @@ function bumpCount(entityId) {
 // -- Verwerken van een sync-respons (server is bron van waarheid) --
 
 function applySyncResult({ results, snapshot: serverSnapshot }) {
-  const flushedIds = new Set();
+  const successIds = new Set();
   const idRemap = { lists: new Map(), items: new Map() };
 
   for (const result of results) {
-    flushedIds.add(result.clientMutationId);
     const mutation = state.outbox.find((m) => m.clientMutationId === result.clientMutationId);
     if (!result.ok || !mutation) continue;
+    successIds.add(result.clientMutationId);
 
     if (mutation.type === 'create_list' && result.entity_id) {
       idRemap.lists.set(mutation.tempListId, result.entity_id);
@@ -354,11 +354,20 @@ function applySyncResult({ results, snapshot: serverSnapshot }) {
     }
   }
 
-  // Nog niet verzonden mutaties blijven staan; de items/lijsten die ze
-  // raken laten we ongemoeid bij het overnemen van de servertoestand, zodat
-  // heel recente lokale wijzigingen niet verdwijnen.
-  state.outbox = state.outbox.filter((m) => !flushedIds.has(m.clientMutationId));
+  // Alleen gelukte mutaties verdwijnen uit de wachtrij. Een mislukte
+  // mutatie (bv. een tijdelijke serverfout) blijft staan en wordt bij de
+  // volgende sync opnieuw geprobeerd -- anders verdween de wijziging van
+  // de gebruiker stilletjes zodra de (nog oude) servertoestand hieronder
+  // wordt overgenomen, en sprong het net bewerkte item terug naar zijn
+  // oude waarde.
+  state.outbox = state.outbox.filter((m) => !successIds.has(m.clientMutationId));
   const stillPendingEntityIds = new Set(state.outbox.map((m) => m.entity_id || m.tempListId));
+  const pendingUidsPerEntity = new Map();
+  for (const m of state.outbox) {
+    if (!m.entity_id || !m.uid) continue;
+    if (!pendingUidsPerEntity.has(m.entity_id)) pendingUidsPerEntity.set(m.entity_id, new Set());
+    pendingUidsPerEntity.get(m.entity_id).add(m.uid);
+  }
 
   const nextLists = serverSnapshot.lists.slice();
   const nextItems = {};
@@ -377,6 +386,21 @@ function applySyncResult({ results, snapshot: serverSnapshot }) {
   }
   for (const [entityId, items] of Object.entries(state.snapshot.items)) {
     if (!stillPendingEntityIds.has(entityId)) continue;
+
+    // Een bestaand item met een nog niet gelukte mutatie (bv. update_item):
+    // de servertoestand kan de laatste lokale wijziging dan nog niet
+    // bevatten -- de lokale, net bewerkte versie blijft leidend totdat de
+    // mutatie alsnog doorkomt.
+    const pendingUids = pendingUidsPerEntity.get(entityId);
+    if (pendingUids && nextItems[entityId]) {
+      const localByUid = new Map(items.map((i) => [i.uid, i]));
+      nextItems[entityId] = nextItems[entityId].map((serverItem) =>
+        pendingUids.has(serverItem.uid) && localByUid.has(serverItem.uid) ? localByUid.get(serverItem.uid) : serverItem
+      );
+    }
+
+    // Nog nooit verzonden nieuwe items (tijdelijke local:-uid) kent de
+    // server nog helemaal niet -- gewoon toevoegen.
     const pendingLocalItems = items.filter((i) => i.uid.startsWith('local:'));
     if (pendingLocalItems.length && nextItems[entityId]) {
       nextItems[entityId] = nextItems[entityId].concat(pendingLocalItems);

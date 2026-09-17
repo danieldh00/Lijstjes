@@ -42,9 +42,30 @@ async function flush() {
       const mutations = JSON.parse(JSON.stringify(storage.getOutbox()));
       const result = await api.sync(mutations);
       storage.applySyncResult(result);
+      // De HTTP-aanroep zelf kan prima gelukt zijn terwijl de server een
+      // afzonderlijke mutatie afwijst (bv. een verouderde entity_id na een
+      // hernoemde lijst) -- die blijft dan in de wachtrij staan voor een
+      // volgende poging (zie applySyncResult), en dat hoort net als een
+      // netwerkfout zichtbaar te zijn zolang er iets wacht.
+      if (result.results.some((r) => !r.ok)) {
+        setStatus({ state: 'error', error: 'Een wijziging kon niet worden opgeslagen, wordt opnieuw geprobeerd.' });
+        notify();
+        return;
+      }
     } else {
       const snapshot = await api.content();
-      storage.replaceSnapshot(snapshot);
+      // Deze aanroep begon toen de wachtrij nog leeg was, maar kan zomaar
+      // een paar honderd ms (of, op een trage verbinding, langer) onderweg
+      // zijn geweest. Is er ondertussen een lokale wijziging bijgekomen
+      // (bv. een item bewerkt), dan is deze snapshot daar nog niet van op
+      // de hoogte -- gewoon overslaan. Zonder deze check overschreef een
+      // toevallig laat binnenkomende, verouderde achtergrondpoll een net
+      // opgeslagen wijziging (die dan meteen weer terugsprong naar de oude
+      // waarde); de volgende flush verstuurt die wijziging alsnog en zet
+      // de boel weer recht.
+      if (storage.getOutboxSize() === 0) {
+        storage.replaceSnapshot(snapshot);
+      }
     }
     setStatus({ state: 'synced', error: null });
     notify();

@@ -86,6 +86,21 @@ lijstjes/frontend/
     hoeveelheid in de naam ("Gehakt (500 g)") en zouden toch nooit matchen,
     dus die krijgen geen suggestie — alleen het handmatige toevoegformulier
     en sjablonen (`suggestStoreForItem` in app.js).
+13. **`POST /api/list-settings` moet alle drie de velden doorgeven** —
+    `templatesEnabled`, `storesEnabled` én `mealsEnabled`. Het is een
+    *vervangende* schrijfactie (`setSettings` in `listSettings.js`), geen
+    partial update: een veld weglaten (in de route-handler óf in de
+    `api.setListSettings(...)`-aanroep in app.js) zet het stilletjes op
+    `false`, ook als het al aanstond. Precies zo verdween "Maaltijden" na
+    elke instellingen-opslag.
+14. **`sync.js`'s `flush()` moet de wachtrij ná elke await herchecken.**
+    Een `api.content()`-aanroep die start terwijl de wachtrij leeg is, kan
+    onderweg zijn terwijl er lokaal alsnog iets gewijzigd wordt (een
+    bewerking, een 15s-poll die toevallig overlapt) — zonder herchecken
+    overschrijft die verouderde snapshot de net gemaakte wijziging zodra
+    hij alsnog binnenkomt (het "springt terug na opslaan"-symptoom). Zelfde
+    reden dat `applySyncResult` (storage.js) een mislukte mutatie in de
+    wachtrij laat staan in plaats van 'm stil te laten vervallen.
 
 ## Werkwijze per wijziging
 

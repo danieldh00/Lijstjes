@@ -9,11 +9,11 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { entity_id: entityId, templatesEnabled, storesEnabled } = req.body || {};
+  const { entity_id: entityId, templatesEnabled, storesEnabled, mealsEnabled } = req.body || {};
   if (!entityId) {
     return res.status(400).json({ error: 'entity_id_required', message: 'entity_id is verplicht.' });
   }
-  res.json(setSettings(entityId, { templatesEnabled, storesEnabled }));
+  res.json(setSettings(entityId, { templatesEnabled, storesEnabled, mealsEnabled }));
 });
 
 module.exports = router;

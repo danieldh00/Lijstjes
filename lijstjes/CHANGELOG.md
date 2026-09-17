@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.1
+
+- **Fix: een bewerkt item sprong terug naar zijn oude waarde.** Een
+  achtergrondcontrole die toevallig vlak vóór het opslaan begon (de
+  gewone 15-secondencontrole, of het scherm dat weer in beeld kwam) kon
+  daarna alsnog binnenkomen en de net opgeslagen wijziging overschrijven.
+  Een mislukte wijziging (bv. door een tijdelijke hapering) verdween
+  voorheen ook stilletjes in plaats van het opnieuw te proberen — dat
+  gebeurt nu niet meer, en de statusbalk laat het zien als er iets nog
+  niet is gelukt.
+- **Fix: "Maaltijden" bleef niet aanstaan.** Bij het opslaan van de
+  lijst-instellingen werd deze schakelaar niet meegestuurd (in de app én
+  in de add-on) en viel steeds stilletjes terug op uit, waardoor de
+  maaltijden nooit in "Snel toevoegen" verschenen.
+
 ## 0.13.0
 
 - **Winkel-geheugen.** De app onthoudt voortaan welke winkel bij welke

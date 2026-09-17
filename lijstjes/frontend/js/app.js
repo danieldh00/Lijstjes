@@ -918,7 +918,7 @@ function renderListSettings(entityId) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Bezig…';
     try {
-      const saved = await api.setListSettings({ entity_id: entityId, templatesEnabled, storesEnabled });
+      const saved = await api.setListSettings({ entity_id: entityId, templatesEnabled, storesEnabled, mealsEnabled });
       storage.setListSettingsCache(entityId, saved);
       // De naam loopt wél via de gewone wachtrij, zodat hernoemen net als elke
       // andere wijziging offline gewoon werkt en later vanzelf doorkomt.
