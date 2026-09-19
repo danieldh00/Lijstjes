@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0
+## 0.13.3
 
 - Voorspellende suggesties bij het toevoegen van een item: terwijl je typt
   toont de app suggesties op basis van wat je in dat lijstje ooit eerder
