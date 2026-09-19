@@ -5,6 +5,7 @@
 
 const SNAPSHOT_KEY = 'lijstjes:snapshot';
 const OUTBOX_KEY = 'lijstjes:outbox';
+const HISTORY_KEY = 'lijstjes:history';
 
 function uuid() {
   if (window.crypto?.randomUUID) return crypto.randomUUID();
@@ -36,11 +37,69 @@ function writeJSON(key, value) {
 const state = {
   snapshot: readJSON(SNAPSHOT_KEY, { lists: [], items: {}, syncedAt: null }),
   outbox: readJSON(OUTBOX_KEY, []),
+  // Voorspeltekst-geschiedenis per lijst: blijft bewaard onafhankelijk van de
+  // huidige items, zodat afgevinkte/verwijderde items ("melk") als suggestie
+  // blijven terugkomen. { [entityId]: { [genormaliseerd]: { summary, count, lastUsed, seenUids } } }
+  history: readJSON(HISTORY_KEY, {}),
 };
 
 function persist() {
   writeJSON(SNAPSHOT_KEY, state.snapshot);
   writeJSON(OUTBOX_KEY, state.outbox);
+  writeJSON(HISTORY_KEY, state.history);
+}
+
+function normalizeText(text) {
+  return String(text || '').trim().toLowerCase();
+}
+
+// Telt een item mee voor de suggestiegeschiedenis van een lijst. `uid` is
+// optioneel: als die wordt meegegeven, telt hetzelfde item (zelfde uid) maar
+// één keer mee, zodat herhaalde sync-polls de teller niet laten oplopen.
+function bumpHistory(entityId, summary, uid) {
+  const text = String(summary || '').trim();
+  if (!text) return;
+  const key = normalizeText(text);
+  const bucket = (state.history[entityId] = state.history[entityId] || {});
+  const entry = (bucket[key] = bucket[key] || { summary: text, count: 0, lastUsed: 0, seenUids: [] });
+  entry.summary = text;
+  if (uid) {
+    if (entry.seenUids.includes(uid)) return;
+    entry.seenUids.push(uid);
+    if (entry.seenUids.length > 50) entry.seenUids.shift();
+  }
+  entry.count += 1;
+  entry.lastUsed = Date.now();
+}
+
+function recordHistoryFromSnapshot(snapshot) {
+  for (const [entityId, items] of Object.entries(snapshot.items || {})) {
+    for (const item of items) {
+      bumpHistory(entityId, item.summary, item.uid);
+    }
+  }
+}
+
+// Suggesties voor een lijst op basis van wat er ooit in is getypt, gesorteerd
+// op wat het vaakst voorkwam en (als tiebreaker) het meest recent is
+// toegevoegd. Voorvoegsel-matches ("mel" -> "melk") gaan voor deelmatches.
+function getSuggestions(entityId, query, limit = 5) {
+  const bucket = state.history[entityId];
+  const q = normalizeText(query);
+  if (!bucket || !q) return [];
+
+  const rank = (a, b) => b.count - a.count || b.lastUsed - a.lastUsed;
+  const starts = [];
+  const contains = [];
+  for (const entry of Object.values(bucket)) {
+    const norm = normalizeText(entry.summary);
+    if (norm === q) continue;
+    if (norm.startsWith(q)) starts.push(entry);
+    else if (norm.includes(q)) contains.push(entry);
+  }
+  starts.sort(rank);
+  contains.sort(rank);
+  return [...starts, ...contains].slice(0, limit).map((e) => e.summary);
 }
 
 function getSnapshot() {
@@ -100,6 +159,7 @@ function addItemLocal(entityId, fields) {
   state.snapshot.items[entityId] = state.snapshot.items[entityId] || [];
   state.snapshot.items[entityId].push(item);
   bumpCount(entityId);
+  bumpHistory(entityId, fields.summary, clientItemId);
   persist();
   queueMutation({
     type: 'add_item',
@@ -212,12 +272,14 @@ function applySyncResult({ results, snapshot: serverSnapshot }) {
   }
 
   state.snapshot = { ...serverSnapshot, lists: nextLists, items: nextItems };
+  recordHistoryFromSnapshot(serverSnapshot);
   persist();
 }
 
 // Zuivere pull (geen openstaande outbox): servertoestand is meteen leidend.
 function replaceSnapshot(serverSnapshot) {
   state.snapshot = serverSnapshot;
+  recordHistoryFromSnapshot(serverSnapshot);
   persist();
 }
 
@@ -235,4 +297,5 @@ export {
   replaceSnapshot,
   findList,
   findItem,
+  getSuggestions,
 };

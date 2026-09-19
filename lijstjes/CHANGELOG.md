@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- Voorspellende suggesties bij het toevoegen van een item: terwijl je typt
+  toont de app suggesties op basis van wat je in dat lijstje ooit eerder
+  hebt toegevoegd (ook items die inmiddels afgevinkt en verwijderd zijn).
+  Werkt volledig lokaal en offline; tik/klik een suggestie aan of selecteer
+  'm met de pijltjestoetsen + Tab/Enter.
+
 ## 0.2.1
 
 - Bugfix: koppelen met een Long-Lived Access Token via de directe

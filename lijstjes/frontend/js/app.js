@@ -196,7 +196,10 @@ function renderListDetail(entityId) {
 
   const addForm = el(`
     <form class="add-form" id="add-item-form">
-      <input type="text" id="new-item-summary" placeholder="Item toevoegen…" required />
+      <div class="field">
+        <input type="text" id="new-item-summary" placeholder="Item toevoegen…" autocomplete="off" required />
+        <div class="suggestions" id="item-suggestions" hidden></div>
+      </div>
       <button class="primary" type="submit">+</button>
     </form>
   `);
@@ -223,9 +226,78 @@ function renderListDetail(entityId) {
     if (!summary) return;
     sync.mutateAndSync(() => storage.addItemLocal(entityId, { summary }));
     input.value = '';
+    input.dispatchEvent(new Event('input'));
   });
 
+  bindItemSuggestions(entityId);
   bindItemActions(entityId);
+}
+
+// ---------- Voorspellende suggesties bij het toevoegen van een item ----------
+
+function bindItemSuggestions(entityId) {
+  const input = document.getElementById('new-item-summary');
+  const box = document.getElementById('item-suggestions');
+  const suggestState = { items: [], activeIndex: -1 };
+
+  function close() {
+    suggestState.items = [];
+    suggestState.activeIndex = -1;
+    box.hidden = true;
+    box.innerHTML = '';
+  }
+
+  function paint() {
+    box.innerHTML = '';
+    if (!suggestState.items.length) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    suggestState.items.forEach((text, i) => {
+      const btn = el(`<button type="button" class="${i === suggestState.activeIndex ? 'active' : ''}">${escapeHtml(text)}</button>`);
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // voorkomt blur voordat de klik verwerkt wordt
+        choose(text);
+      });
+      box.appendChild(btn);
+    });
+  }
+
+  function choose(text) {
+    input.value = text;
+    close();
+    input.focus();
+  }
+
+  input.addEventListener('input', () => {
+    suggestState.items = input.value.trim() ? storage.getSuggestions(entityId, input.value) : [];
+    suggestState.activeIndex = -1;
+    paint();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (!suggestState.items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      suggestState.activeIndex = (suggestState.activeIndex + 1) % suggestState.items.length;
+      paint();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      suggestState.activeIndex = (suggestState.activeIndex - 1 + suggestState.items.length) % suggestState.items.length;
+      paint();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      choose(suggestState.items[Math.max(suggestState.activeIndex, 0)]);
+    } else if (e.key === 'Enter' && suggestState.activeIndex >= 0) {
+      e.preventDefault();
+      choose(suggestState.items[suggestState.activeIndex]);
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+
+  input.addEventListener('blur', () => setTimeout(close, 100));
 }
 
 function renderItemList(entityId, items) {
