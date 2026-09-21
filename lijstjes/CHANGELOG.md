@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.4
 
 - **Voorspellende suggesties werken nu ook voor huisgenoten.** Wat je in een
   lijstje typt telt voortaan mee als suggestie op alle toestellen die deze
