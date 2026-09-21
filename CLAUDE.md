@@ -1,11 +1,33 @@
 # Lijstjes — werkgeheugen
 
 Home Assistant add-on: offline-first PWA voor HA's to-do-lijsten.
-Repo `danieldh00/Lijstjes`, ontwikkelbranch `claude/offline-lists-home-assistant-v9v6rf`.
+Repo `danieldh00/Lijstjes`.
 
-De add-on staat op de HA van de gebruiker met **auto_update aan** (slug
-`196a7da8_lijstjes`): na een push naar die branch werkt hij zichzelf bij, er is
-geen handmatige stap. Bump dus altijd `lijstjes/config.yaml` → `version`.
+## Branchmodel
+
+- **`master`** is de productiebranch (én GitHub's default branch) en staat op
+  de HA van de gebruiker met **auto_update aan** (slug `196a7da8_lijstjes`):
+  na een push naar `master` werkt de add-on zichzelf bij, er is geen
+  handmatige stap.
+- **`develop`** is de integratiebranch voor lopend werk. Features takken af
+  van `develop` als `feature/<naam>` en gaan via een PR terug naar `develop`
+  — nooit rechtstreeks naar `master`.
+- Een release is een PR van `develop` naar `master`. Pas op dát moment wordt
+  de add-on-versie verhoogd (zie hieronder) — dat is ook het moment waarop de
+  gebruiker de update krijgt, dus behandel elke merge naar `master` als een
+  productie-release.
+- Een GitHub Actions-check (`.github/workflows/addon-version.yml` +
+  `scripts/check_addon_version.py`) bewaakt dat de versie in
+  `lijstjes/config.yaml` bij elke push naar `master` (en elke PR ernaartoe)
+  hoger is dan de vorige. Die check vangt alleen afwijkingen t.o.v. de
+  git-geschiedenis af — **niet** t.o.v. een live installatie die buiten git
+  om is afgeweken (bv. na een geschiedenis-herschrijving). Vraag daarom vóór
+  het bumpen altijd (of laat de gebruiker vragen) de `installed_version` op
+  via het `update.lijstjes_update`-entity in Home Assistant, en kies een
+  nieuw versienummer dat ook daarboven zit. Een versie die niet hoger is dan
+  wat al geïnstalleerd staat, biedt Home Assistant nooit aan als update —
+  die blijft dan onopgemerkt stil staan, ook na handmatig verversen in de
+  add-on store.
 
 ## Uitgangspunten
 
@@ -45,6 +67,8 @@ lijstjes/frontend/
   js/sync.js                achtergrondsync        js/icons.js  MDI + naam→icoon
   sw.js                     app-shell cache, push, achtergrond-snapshot
 .github/workflows/ci.yml    npm ci/test/audit bij elke push/PR
+.github/workflows/addon-version.yml + scripts/check_addon_version.py
+                             bewaakt versie-bump richting master (zie Branchmodel)
 ```
 
 ## Valkuilen (duur om opnieuw te ontdekken)
@@ -120,9 +144,13 @@ lijstjes/frontend/
 1. Code aanpassen; `node --check` (frontend-ES-modules eerst naar `.mjs`
    kopiëren).
 2. `node test/run.js` — de regressietests draaien (zie `test/README.md`).
-3. Versie bumpen in `lijstjes/config.yaml` + entry in `lijstjes/CHANGELOG.md`;
-   `DOCS.md`/`README.md` bij als gedrag zichtbaar wijzigt.
-4. Committen met de gevraagde attributie-footer, pushen naar de ontwikkelbranch.
+3. `DOCS.md`/`README.md` bij als gedrag zichtbaar wijzigt; entry in
+   `lijstjes/CHANGELOG.md`.
+4. Committen met de gevraagde attributie-footer, pushen naar de
+   feature-branch en een PR openen naar `develop`.
+5. Alleen bij een release (PR `develop` → `master`): versie bumpen in
+   `lijstjes/config.yaml` — zie Branchmodel hierboven voor de valkuil met de
+   live `installed_version`.
 
 ## Open punt
 
