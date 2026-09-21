@@ -57,9 +57,10 @@ lijstjes/backend/src/
   ha/mealie.js              weekmenu/recepten + ingrediëntnotatie
   ha/snapshot.js            volledige inhoud in één keer
   watcher.js                WS state_changed (near-instant) + 20s-poll-vangnet → pushmeldingen
-  templates.js stores.js itemStoreMemory.js listSettings.js listOrder.js   → JSON in /data
+  templates.js stores.js itemStoreMemory.js itemHistory.js
+    listSettings.js listOrder.js                                  → JSON in /data
   routes/                   auth content sync push templates stores
-                            item-stores listSettings listOrder mealie
+                            item-stores item-history listSettings listOrder mealie
   test/                     node --test (auth/session, rate limiter, ingress-IP, sync-validatie)
 lijstjes/frontend/
   js/app.js                 router + alle views

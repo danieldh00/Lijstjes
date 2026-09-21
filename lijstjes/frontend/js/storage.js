@@ -11,6 +11,7 @@ const LIST_SETTINGS_KEY = 'lijstjes:list-settings';
 const LIST_ORDER_KEY = 'lijstjes:list-order';
 const ITEM_STORES_KEY = 'lijstjes:item-stores';
 const ITEM_HISTORY_KEY = 'lijstjes:item-history';
+const REMOTE_ITEM_HISTORY_KEY = 'lijstjes:item-history-remote';
 
 // Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
 // pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
@@ -54,6 +55,7 @@ const state = {
   listOrder: readJSON(LIST_ORDER_KEY, []),
   itemStores: readJSON(ITEM_STORES_KEY, []),
   itemHistory: readJSON(ITEM_HISTORY_KEY, {}),
+  remoteItemHistory: readJSON(REMOTE_ITEM_HISTORY_KEY, []),
 };
 
 function persist() {
@@ -142,11 +144,14 @@ function rememberItemStoreLocal(entityId, itemName, store) {
 // Voorspellende suggesties bij het toevoegen van een item: onthoudt welke
 // itemnamen ooit in een lijst zijn getypt (met hoeveel keer en wanneer voor
 // het laatst), los van de huidige items -- zo blijft "Melk" een suggestie
-// ook nadat het item is afgevinkt en opgeruimd. Puur lokaal (geen HA-concept
-// en geen cross-device-behoefte zoals bij de winkel-herinnering hierboven),
-// per lijst: { [entityId]: { [genormaliseerd]: { summary, count, lastUsed,
-// seenUids } } }. `uid` is optioneel: meegeven voorkomt dat hetzelfde item
-// (zelfde uid) via een herhaalde sync-poll of -pull dubbel meetelt.
+// ook nadat het item is afgevinkt en opgeruimd. Dit lokale, per-toestel
+// archief (werkt ook offline) per lijst: { [entityId]: { [genormaliseerd]:
+// { summary, count, lastUsed, seenUids } } }. `uid` is optioneel: meegeven
+// voorkomt dat hetzelfde item (zelfde uid) via een herhaalde sync-poll of
+// -pull dubbel meetelt. Voor suggesties die ook meetellen wat ándere
+// gebruikers hebben getypt, zie `remoteItemHistory` hieronder: dat is de
+// gedeelde, server-side tegenhanger (net als bij de winkel-herinnering) en
+// wordt in `getItemSuggestions` samengevoegd met dit lokale archief.
 function bumpItemHistory(entityId, summary, uid) {
   const text = String(summary || '').trim();
   if (!text) return;
@@ -173,19 +178,51 @@ function recordItemHistoryFromSnapshot(snapshot) {
   }
 }
 
-// Suggesties voor een lijst op basis van wat er ooit in is getypt: eerst
+// Server-side tegenhanger van de lokale geschiedenis hierboven: wat ándere
+// gebruikers (op een ander toestel) ooit in deze lijst hebben getypt. Zelfde
+// opzet als item-stores: los gecacht, één keer opgehaald bij het opstarten
+// (zie sync.refreshItemHistory), platte array in dezelfde vorm als de
+// server 'm teruggeeft.
+function setRemoteItemHistoryCache(entries) {
+  state.remoteItemHistory = entries;
+  writeJSON(REMOTE_ITEM_HISTORY_KEY, state.remoteItemHistory);
+}
+
+// Suggesties voor een lijst op basis van wat er ooit in is getypt -- zowel
+// lokaal als (via remoteItemHistory) door andere gebruikers: eerst
 // voorvoegsel-matches ("mel" -> "Melk"), dan deelmatches, gesorteerd op
 // frequentie en (als tiebreaker) recentheid. Wat je al exact hebt getypt
 // wordt niet als suggestie teruggegeven (niets meer aan te vullen).
 function getItemSuggestions(entityId, query, limit = 5) {
-  const bucket = state.itemHistory[entityId];
   const q = normalizeItemKey(query);
-  if (!bucket || !q) return [];
+  if (!q) return [];
+
+  // Samenvoegen op genormaliseerde naam. Dit toestel telt vaak in beide
+  // bronnen mee (eigen invoer wordt ook naar de server gestuurd) -- het
+  // maximum nemen i.p.v. optellen voorkomt dat zo'n item daardoor kunstmatig
+  // hoger scoort dan wat andere gebruikers typen.
+  const merged = new Map();
+  const localBucket = state.itemHistory[entityId];
+  if (localBucket) {
+    for (const entry of Object.values(localBucket)) {
+      merged.set(normalizeItemKey(entry.summary), { summary: entry.summary, count: entry.count, lastUsed: entry.lastUsed });
+    }
+  }
+  for (const entry of state.remoteItemHistory) {
+    if (entry.entity_id !== entityId) continue;
+    const existing = merged.get(entry.itemKey);
+    if (existing) {
+      existing.count = Math.max(existing.count, entry.count);
+      existing.lastUsed = Math.max(existing.lastUsed, entry.lastUsed);
+    } else {
+      merged.set(entry.itemKey, { summary: entry.summary, count: entry.count, lastUsed: entry.lastUsed });
+    }
+  }
 
   const rank = (a, b) => b.count - a.count || b.lastUsed - a.lastUsed;
   const starts = [];
   const contains = [];
-  for (const entry of Object.values(bucket)) {
+  for (const entry of merged.values()) {
     const norm = normalizeItemKey(entry.summary);
     if (norm === q) continue;
     if (norm.startsWith(q)) starts.push(entry);
@@ -514,6 +551,7 @@ function clearAll() {
   state.listOrder = [];
   state.itemStores = [];
   state.itemHistory = {};
+  state.remoteItemHistory = [];
   writeJSON(SNAPSHOT_KEY, state.snapshot);
   writeJSON(OUTBOX_KEY, state.outbox);
   writeJSON(TEMPLATES_KEY, state.templates);
@@ -522,6 +560,7 @@ function clearAll() {
   writeJSON(LIST_ORDER_KEY, state.listOrder);
   writeJSON(ITEM_STORES_KEY, state.itemStores);
   writeJSON(ITEM_HISTORY_KEY, state.itemHistory);
+  writeJSON(REMOTE_ITEM_HISTORY_KEY, state.remoteItemHistory);
 }
 
 export {
@@ -553,6 +592,7 @@ export {
   setItemStoresCache,
   rememberItemStoreLocal,
   getItemSuggestions,
+  setRemoteItemHistoryCache,
   getListSettings,
   setAllListSettingsCache,
   setListSettingsCache,

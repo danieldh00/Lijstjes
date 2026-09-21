@@ -152,6 +152,25 @@ function rememberItemStore(entityId, itemName, store) {
   api.rememberItemStore(entityId, itemName, store).catch(() => {});
 }
 
+// Welke itemnamen ooit in een lijst zijn getypt, gedeeld tussen gebruikers
+// -- zelfde behandeling als de winkels hierboven: los ophalen en cachen.
+async function refreshItemHistory() {
+  try {
+    const { itemHistory } = await api.itemHistory();
+    storage.setRemoteItemHistoryCache(itemHistory);
+  } catch (err) {
+    // stil falen -- geen netwerk
+  }
+}
+
+// De lokale bump (storage.bumpItemHistory) gebeurt al automatisch bij elke
+// storage.addItemLocal-aanroep; dit meldt de server dat ándere toestellen
+// dit item ook als suggestie mogen krijgen. Zelfde niet-kritieke, fire-and-
+// forget behandeling als rememberItemStore hierboven.
+function bumpItemHistory(entityId, summary) {
+  api.bumpItemHistory(entityId, summary).catch(() => {});
+}
+
 async function init() {
   // Voordat we ook maar iets over het netwerk proberen: is er een snapshot
   // die de service worker op de achtergrond heeft opgehaald (via een
@@ -199,6 +218,7 @@ async function init() {
   refreshListSettings();
   refreshListOrder();
   refreshItemStores();
+  refreshItemHistory();
 }
 
 function mutateAndSync(mutateFn) {
@@ -220,4 +240,6 @@ export {
   refreshListOrder,
   refreshItemStores,
   rememberItemStore,
+  refreshItemHistory,
+  bumpItemHistory,
 };

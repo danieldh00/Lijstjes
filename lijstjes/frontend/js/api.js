@@ -39,6 +39,9 @@ const api = {
   itemStores: () => request('/api/item-stores'),
   rememberItemStore: (entityId, itemName, store) =>
     request('/api/item-stores', { method: 'POST', body: { entity_id: entityId, item_name: itemName, store } }),
+  itemHistory: () => request('/api/item-history'),
+  bumpItemHistory: (entityId, summary) =>
+    request('/api/item-history', { method: 'POST', body: { entity_id: entityId, summary } }),
 };
 
 export default api;
