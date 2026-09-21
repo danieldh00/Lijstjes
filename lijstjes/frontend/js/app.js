@@ -451,6 +451,7 @@ function renderListDetail(entityId) {
     input.value = '';
     if (storeSelect) storeSelect.value = '';
     if (store) sync.rememberItemStore(entityId, summary, store);
+    sync.bumpItemHistory(entityId, summary);
     sync.mutateAndSync(() => storage.addItemLocal(entityId, { summary, description: buildDescription(store, '') }));
   });
 
@@ -819,7 +820,10 @@ async function addRecipeIngredients(entityId, btn) {
       return;
     }
     sync.mutateAndSync(() => {
-      for (const summary of ingredients) storage.addItemLocal(entityId, { summary });
+      for (const summary of ingredients) {
+        sync.bumpItemHistory(entityId, summary);
+        storage.addItemLocal(entityId, { summary });
+      }
     });
   } catch (err) {
     alert(`Kon de ingrediënten niet ophalen: ${err.message}`);
@@ -852,6 +856,7 @@ function renderTemplateChips(entityId, row) {
       sync.mutateAndSync(() => {
         for (const summary of tpl.items) {
           const store = suggestStoreForItem(entityId, summary);
+          sync.bumpItemHistory(entityId, summary);
           storage.addItemLocal(entityId, { summary, description: buildDescription(store, '') });
         }
       });

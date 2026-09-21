@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.4
+
+- **Voorspellende suggesties werken nu ook voor huisgenoten.** Wat je in een
+  lijstje typt telt voortaan mee als suggestie op alle toestellen die deze
+  add-on gebruiken, niet meer alleen op het toestel waarmee je het zelf
+  typte — net als het winkel-geheugen per item (zie 0.13.0) werkt dit
+  gedeeld, los van Home Assistant. Elk toestel houdt daarnaast een eigen
+  lokale kopie bij, zodat suggesties ook offline blijven werken.
+
 ## 0.13.3
 
 - **Voorspellende suggesties bij het toevoegen van een item.** Terwijl je

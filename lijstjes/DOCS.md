@@ -113,6 +113,21 @@ omschrijving-veld van het item, als eerste regel met een 🏪-icoontje ervoor),
 dus die blijft ook zichtbaar en bruikbaar als je het lijstje via de HA-app of
 Assist bekijkt.
 
+## Voorspellende suggesties bij het toevoegen van een item
+
+Terwijl je een itemnaam typt, toont de app suggesties op basis van wat er in
+dat lijstje ooit eerder is getypt — ook items die inmiddels afgevinkt en
+opgeruimd zijn. Tik of klik een suggestie aan, of selecteer 'm met de
+pijltjestoetsen + Tab/Enter; staat er bij die naam een winkel onthouden (zie
+hierboven), dan wordt die meteen ingevuld.
+
+Suggesties werken voor iedereen die deze add-on gebruikt, niet alleen op het
+toestel waarmee een item ooit is getypt: wat je typt wordt — net als de
+winkel-koppeling hierboven — gedeeld opgeslagen in de eigen opslag van de
+add-on, los van Home Assistant. Elk toestel houdt daarnaast ook een eigen,
+lokale kopie bij, zodat suggesties direct werken, ook offline en vóórdat de
+gedeelde lijst voor het eerst is opgehaald.
+
 ## Offline gebruik & synchronisatie
 
 De app is *local-first*: eenmaal geopend (via de directe poort-3100-route,
