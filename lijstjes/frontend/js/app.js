@@ -385,7 +385,10 @@ function renderListDetail(entityId) {
   const stores = settings.storesEnabled ? storage.getStores(entityId) : [];
   const addForm = el(`
     <form class="add-form" id="add-item-form">
-      <input type="text" id="new-item-summary" placeholder="Item toevoegen…" required />
+      <div class="field">
+        <input type="text" id="new-item-summary" placeholder="Item toevoegen…" autocomplete="off" required />
+        <div class="suggestions" id="item-suggestions" hidden></div>
+      </div>
       ${stores.length ? `
         <select id="new-item-store">
           <option value="">Winkel</option>
@@ -397,16 +400,19 @@ function renderListDetail(entityId) {
   `);
   appEl.appendChild(addForm);
 
+  const nameInput = document.getElementById('new-item-summary');
+  const storeSelect = document.getElementById('new-item-store');
+
   // Winkel live voorstellen terwijl je typt (net als het icoonvoorbeeld bij
   // een nieuw lijstje) -- zodra de naam een eerder bekend item is, staat de
   // winkel meteen goed en hoef je 'm niet elke keer opnieuw te kiezen.
-  if (stores.length) {
-    const nameInput = document.getElementById('new-item-summary');
-    const storeSelect = document.getElementById('new-item-store');
+  if (storeSelect) {
     nameInput.addEventListener('input', () => {
       storeSelect.value = suggestStoreForItem(entityId, nameInput.value) || '';
     });
   }
+
+  bindItemNameSuggestions(entityId, nameInput, storeSelect);
 
   if (settings.templatesEnabled || settings.mealsEnabled) renderQuickAdd(entityId, settings);
 
@@ -584,6 +590,76 @@ function bindItemActions(entityId) {
       sync.mutateAndSync(() => storage.moveItemLocal(entityId, uid, 1))
     );
   });
+}
+
+// Voorspellende suggesties terwijl je een itemnaam typt, op basis van wat
+// ooit eerder in dít lijstje is getypt (zie storage.getItemSuggestions) --
+// ook items die inmiddels afgevinkt en opgeruimd zijn. Los van de
+// winkel-suggestie hierboven; bij het overnemen van een suggestie laten we
+// die wel meteen meelopen zodat de winkel ook meteen klopt.
+function bindItemNameSuggestions(entityId, nameInput, storeSelect) {
+  const box = document.getElementById('item-suggestions');
+  const suggestState = { items: [], activeIndex: -1 };
+
+  function close() {
+    suggestState.items = [];
+    suggestState.activeIndex = -1;
+    box.hidden = true;
+    box.innerHTML = '';
+  }
+
+  function paint() {
+    box.innerHTML = '';
+    if (!suggestState.items.length) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    suggestState.items.forEach((text, i) => {
+      const btn = el(`<button type="button" class="${i === suggestState.activeIndex ? 'active' : ''}">${escapeHtml(text)}</button>`);
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // voorkomt blur voordat de klik verwerkt wordt
+        choose(text);
+      });
+      box.appendChild(btn);
+    });
+  }
+
+  function choose(text) {
+    nameInput.value = text;
+    close();
+    if (storeSelect) storeSelect.value = suggestStoreForItem(entityId, text) || '';
+    nameInput.focus();
+  }
+
+  nameInput.addEventListener('input', () => {
+    suggestState.items = nameInput.value.trim() ? storage.getItemSuggestions(entityId, nameInput.value) : [];
+    suggestState.activeIndex = -1;
+    paint();
+  });
+
+  nameInput.addEventListener('keydown', (e) => {
+    if (!suggestState.items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      suggestState.activeIndex = (suggestState.activeIndex + 1) % suggestState.items.length;
+      paint();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      suggestState.activeIndex = (suggestState.activeIndex - 1 + suggestState.items.length) % suggestState.items.length;
+      paint();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      choose(suggestState.items[Math.max(suggestState.activeIndex, 0)]);
+    } else if (e.key === 'Enter' && suggestState.activeIndex >= 0) {
+      e.preventDefault();
+      choose(suggestState.items[suggestState.activeIndex]);
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+
+  nameInput.addEventListener('blur', () => setTimeout(close, 100));
 }
 
 // ---------- Maaltijden uit Mealie ----------

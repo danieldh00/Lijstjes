@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.3
+
+- **Voorspellende suggesties bij het toevoegen van een item.** Terwijl je
+  typt toont de app suggesties op basis van wat je in dat lijstje ooit
+  eerder hebt toegevoegd — ook items die inmiddels afgevinkt en opgeruimd
+  zijn. Werkt volledig lokaal en offline; tik/klik een suggestie aan of
+  selecteer 'm met de pijltjestoetsen + Tab/Enter. Kies je een suggestie
+  in een lijst met winkels, dan wordt ook meteen de bijbehorende winkel
+  ingevuld, net als bij handmatig typen.
+
 ## 0.13.2
 
 - **De echte oorzaak gevonden van de mislukte item-bewerking uit 0.13.1:**

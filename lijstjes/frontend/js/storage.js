@@ -10,6 +10,7 @@ const STORES_KEY = 'lijstjes:stores';
 const LIST_SETTINGS_KEY = 'lijstjes:list-settings';
 const LIST_ORDER_KEY = 'lijstjes:list-order';
 const ITEM_STORES_KEY = 'lijstjes:item-stores';
+const ITEM_HISTORY_KEY = 'lijstjes:item-history';
 
 // Zelfde cache als sw.js gebruikt om de snapshot te verversen wanneer een
 // pushmelding binnenkomt terwijl de app niet open staat -- localStorage is
@@ -52,6 +53,7 @@ const state = {
   listSettings: readJSON(LIST_SETTINGS_KEY, {}),
   listOrder: readJSON(LIST_ORDER_KEY, []),
   itemStores: readJSON(ITEM_STORES_KEY, []),
+  itemHistory: readJSON(ITEM_HISTORY_KEY, {}),
 };
 
 function persist() {
@@ -135,6 +137,63 @@ function rememberItemStoreLocal(entityId, itemName, store) {
   if (idx === -1) state.itemStores.push(entry);
   else state.itemStores[idx] = entry;
   writeJSON(ITEM_STORES_KEY, state.itemStores);
+}
+
+// Voorspellende suggesties bij het toevoegen van een item: onthoudt welke
+// itemnamen ooit in een lijst zijn getypt (met hoeveel keer en wanneer voor
+// het laatst), los van de huidige items -- zo blijft "Melk" een suggestie
+// ook nadat het item is afgevinkt en opgeruimd. Puur lokaal (geen HA-concept
+// en geen cross-device-behoefte zoals bij de winkel-herinnering hierboven),
+// per lijst: { [entityId]: { [genormaliseerd]: { summary, count, lastUsed,
+// seenUids } } }. `uid` is optioneel: meegeven voorkomt dat hetzelfde item
+// (zelfde uid) via een herhaalde sync-poll of -pull dubbel meetelt.
+function bumpItemHistory(entityId, summary, uid) {
+  const text = String(summary || '').trim();
+  if (!text) return;
+  const key = normalizeItemKey(text);
+  const bucket = (state.itemHistory[entityId] = state.itemHistory[entityId] || {});
+  const entry = (bucket[key] = bucket[key] || { summary: text, count: 0, lastUsed: 0, seenUids: [] });
+  entry.summary = text;
+  if (uid) {
+    if (entry.seenUids.includes(uid)) return;
+    entry.seenUids.push(uid);
+    if (entry.seenUids.length > 50) entry.seenUids.shift();
+  }
+  entry.count += 1;
+  entry.lastUsed = Date.now();
+  writeJSON(ITEM_HISTORY_KEY, state.itemHistory);
+}
+
+// Haalt de geschiedenis ook uit een (server-)snapshot, zodat suggesties ook
+// meetellen voor items die via Assist/voice, de HA-app of een ander toestel
+// zijn toegevoegd -- niet alleen items die via déze knop lokaal zijn gezet.
+function recordItemHistoryFromSnapshot(snapshot) {
+  for (const [entityId, items] of Object.entries(snapshot.items || {})) {
+    for (const item of items) bumpItemHistory(entityId, item.summary, item.uid);
+  }
+}
+
+// Suggesties voor een lijst op basis van wat er ooit in is getypt: eerst
+// voorvoegsel-matches ("mel" -> "Melk"), dan deelmatches, gesorteerd op
+// frequentie en (als tiebreaker) recentheid. Wat je al exact hebt getypt
+// wordt niet als suggestie teruggegeven (niets meer aan te vullen).
+function getItemSuggestions(entityId, query, limit = 5) {
+  const bucket = state.itemHistory[entityId];
+  const q = normalizeItemKey(query);
+  if (!bucket || !q) return [];
+
+  const rank = (a, b) => b.count - a.count || b.lastUsed - a.lastUsed;
+  const starts = [];
+  const contains = [];
+  for (const entry of Object.values(bucket)) {
+    const norm = normalizeItemKey(entry.summary);
+    if (norm === q) continue;
+    if (norm.startsWith(q)) starts.push(entry);
+    else if (norm.includes(q)) contains.push(entry);
+  }
+  starts.sort(rank);
+  contains.sort(rank);
+  return [...starts, ...contains].slice(0, limit).map((e) => e.summary);
 }
 
 // Per lijst: staan Sjablonen/Winkels aan? Niet elk lijstje (bv. Klussen)
@@ -263,6 +322,7 @@ function addItemLocal(entityId, fields) {
   state.snapshot.items[entityId] = state.snapshot.items[entityId] || [];
   state.snapshot.items[entityId].push(item);
   bumpCount(entityId);
+  bumpItemHistory(entityId, fields.summary, clientItemId);
   persist();
   queueMutation({
     type: 'add_item',
@@ -408,12 +468,14 @@ function applySyncResult({ results, snapshot: serverSnapshot }) {
   }
 
   state.snapshot = { ...serverSnapshot, lists: nextLists, items: nextItems };
+  recordItemHistoryFromSnapshot(serverSnapshot);
   persist();
 }
 
 // Zuivere pull (geen openstaande outbox): servertoestand is meteen leidend.
 function replaceSnapshot(serverSnapshot) {
   state.snapshot = serverSnapshot;
+  recordItemHistoryFromSnapshot(serverSnapshot);
   persist();
 }
 
@@ -451,6 +513,7 @@ function clearAll() {
   state.listSettings = {};
   state.listOrder = [];
   state.itemStores = [];
+  state.itemHistory = {};
   writeJSON(SNAPSHOT_KEY, state.snapshot);
   writeJSON(OUTBOX_KEY, state.outbox);
   writeJSON(TEMPLATES_KEY, state.templates);
@@ -458,6 +521,7 @@ function clearAll() {
   writeJSON(LIST_SETTINGS_KEY, state.listSettings);
   writeJSON(LIST_ORDER_KEY, state.listOrder);
   writeJSON(ITEM_STORES_KEY, state.itemStores);
+  writeJSON(ITEM_HISTORY_KEY, state.itemHistory);
 }
 
 export {
@@ -488,6 +552,7 @@ export {
   getItemStoreMemory,
   setItemStoresCache,
   rememberItemStoreLocal,
+  getItemSuggestions,
   getListSettings,
   setAllListSettingsCache,
   setListSettingsCache,
