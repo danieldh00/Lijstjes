@@ -6,7 +6,7 @@ Repo `danieldh00/Lijstjes`.
 ## Branchmodel
 
 - **`master`** is de productiebranch (én GitHub's default branch) en staat op
-  de HA van de gebruiker met **auto_update aan** (slug `196a7da8_lijstjes`):
+  de HA van de gebruiker met **auto_update aan** (slug `648ff278_lijstjes`):
   na een push naar `master` werkt de add-on zichzelf bij, er is geen
   handmatige stap.
 - **`develop`** is de integratiebranch voor lopend werk. Features takken af
@@ -139,6 +139,21 @@ lijstjes/frontend/
     ook opgeruimd worden — anders blijft `sendNotificationToAll` 'm bij
     elke poll opnieuw proberen en de log vollopen met "Pushmelding
     mislukt".
+17. **De add-on-slug (`<repository-hash>_lijstjes`) is afgeleid van de
+    repository-URL, niet van de add-on zelf.** Verwijder je de HA-
+    add-on-repository en voeg je 'm opnieuw toe (bv. om van branch te
+    wisselen, zie de branch-repoint van 21-09-2026), dan krijgt Supervisor
+    een nieuwe hash en dus een nieuwe slug (`196a7da8_lijstjes` werd
+    `648ff278_lijstjes`). De add-on moet dan opnieuw geïnstalleerd worden
+    (oude installatie wordt bij het verwijderen van de repository
+    gedeïnstalleerd) en de `/data`-map van de oude slug gaat daarbij naar
+    alle waarschijnlijkheid niet mee over: sjablonen, winkels, geleerde
+    winkel- en itemgeschiedenis-koppelingen en gekoppelde toestellen/
+    sessies moeten dan opnieuw opgebouwd worden. HA's eigen to-do-lijsten
+    zijn niet geraakt (die zijn en blijven de bron van waarheid). Config-
+    opties (`public_url`), `auto_update` en `watchdog` staan bovendien na
+    een herinstallatie op hun default en moeten expliciet teruggezet
+    worden.
 
 ## Werkwijze per wijziging
 
@@ -160,5 +175,5 @@ De **Mealie-integratie staat inmiddels in HA geconfigureerd** (`state:
 klopt dus niet meer. De Mealie-code is nog steeds alleen tegen nagebootste
 responses getest, niet tegen de echte integratie; controleer bij het
 volgende Mealie-gerelateerde issue eerst de add-on-log
-(`ha_get_logs(source="supervisor", slug="196a7da8_lijstjes")`) op een
+(`ha_get_logs(source="supervisor", slug="648ff278_lijstjes")`) op een
 `mealie.*`-foutmelding voordat je een nieuwe bug aanneemt.
