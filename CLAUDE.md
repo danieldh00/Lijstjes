@@ -153,7 +153,13 @@ lijstjes/frontend/
     zijn niet geraakt (die zijn en blijven de bron van waarheid). Config-
     opties (`public_url`), `auto_update` en `watchdog` staan bovendien na
     een herinstallatie op hun default en moeten expliciet teruggezet
-    worden.
+    worden. **Controleer ook de Cloudflared-add-on** (`additional_hosts` in
+    de opties, slug `9074a9fa_cloudflared`): die routeert `taken.den-
+    hollander.com` naar de container op zijn *hostnaam*
+    (`http://<slug>-lijstjes:3100`), dus die verwijzing moet mee-veranderen
+    naar de nieuwe slug, anders krijgt de gebruiker een 502/host error op
+    de publieke URL terwijl de add-on zelf prima draait (zie de host-error
+    van 22-09-2026, direct na de branch-repoint hierboven ontdekt).
 
 ## Werkwijze per wijziging
 
